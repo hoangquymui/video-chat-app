@@ -9,6 +9,11 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 
+type SocketUser = {
+  id: number;
+  name: string;
+};
+
 type SignalPayload = {
   roomId: string;
   to?: string;
@@ -47,16 +52,22 @@ export class SignalingGateway
 
   @SubscribeMessage('join-room')
   handleJoinRoom(
-    @MessageBody() data: { roomId: string },
+    @MessageBody()
+    data: {
+      roomId: string;
+      user: SocketUser;
+    },
     @ConnectedSocket() client: Socket,
   ) {
-    const { roomId } = data;
+    const { roomId, user } = data;
 
     client.join(roomId);
     client.data.roomId = roomId;
+    client.data.user = user;
 
     client.to(roomId).emit('user-joined', {
       from: client.id,
+      user,
     });
 
     console.log(`Client ${client.id} joined room ${roomId}`);
@@ -64,6 +75,7 @@ export class SignalingGateway
     return {
       socketId: client.id,
       roomId,
+      user,
     };
   }
 
@@ -75,6 +87,7 @@ export class SignalingGateway
     client.to(data.to!).emit('offer', {
       from: client.id,
       offer: data.offer,
+      user: client.data.user,
     });
   }
 
@@ -112,6 +125,7 @@ export class SignalingGateway
     });
 
     client.data.roomId = null;
+    client.data.user = null;
 
     console.log(`Client ${client.id} left room ${data.roomId}`);
   }

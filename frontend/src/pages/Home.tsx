@@ -4,6 +4,12 @@ import RemoteVideoCard from "../components/RemoteVideoCard";
 import ControlBar from "../components/ControlBar";
 import { useWebRTC } from "../hooks/useWebRTC";
 
+type User = {
+  id: number;
+  name: string;
+  email: string;
+};
+
 function Home() {
   const {
     localVideoRef,
@@ -17,24 +23,26 @@ function Home() {
     toggleMic,
   } = useWebRTC();
 
+  const user: User | null = JSON.parse(localStorage.getItem("user") || "null");
+
   return (
     <main className="min-h-screen bg-slate-950 px-6 py-8 pb-32">
       <Header />
 
       <section className="mx-auto grid max-w-6xl grid-cols-1 gap-6 md:grid-cols-2">
-        <VideoCard title="Camera của tôi" videoRef={localVideoRef} />
+        <VideoCard title={user?.name ?? "Tôi"} videoRef={localVideoRef} />
 
-        {remoteStreams.map((remote, index) => (
+        {remoteStreams.map((remote) => (
           <RemoteVideoCard
             key={remote.peerId}
-            title={`Camera tab ${index + 1}`}
+            title={remote.name}
             stream={remote.stream}
           />
         ))}
       </section>
 
       <p className="mt-4 text-center text-slate-400">
-        Số tab đang kết nối: {remoteStreams.length}
+        Số người đang kết nối: {remoteStreams.length}
       </p>
 
       <ControlBar
