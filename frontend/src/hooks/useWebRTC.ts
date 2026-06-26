@@ -15,7 +15,25 @@ export function useWebRTC() {
   const peerConnectionsRef = useRef<Map<string, RTCPeerConnection>>(new Map());
 
   const [joined, setJoined] = useState(false);
+  const [cameraEnabled, setCameraEnabled] = useState(true);
+  const [micEnabled, setMicEnabled] = useState(true);
   const [remoteStreams, setRemoteStreams] = useState<RemoteStream[]>([]);
+
+  const toggleCamera = () => {
+    const videoTrack = localStreamRef.current?.getVideoTracks()[0];
+    if (!videoTrack) return;
+
+    videoTrack.enabled = !videoTrack.enabled;
+    setCameraEnabled(videoTrack.enabled);
+  };
+
+  const toggleMic = () => {
+    const audioTrack = localStreamRef.current?.getAudioTracks()[0];
+    if (!audioTrack) return;
+
+    audioTrack.enabled = !audioTrack.enabled;
+    setMicEnabled(audioTrack.enabled);
+  };
 
   const startLocalCamera = async () => {
     const stream = await navigator.mediaDevices.getUserMedia({
@@ -263,6 +281,10 @@ export function useWebRTC() {
   return {
     localVideoRef,
     remoteStreams,
+    cameraEnabled,
+    micEnabled,
+    toggleCamera,
+    toggleMic,
     joined,
     joinRoom,
     leaveRoom,

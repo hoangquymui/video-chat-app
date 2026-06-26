@@ -1,14 +1,24 @@
 import Header from "../components/Header";
 import VideoCard from "../components/VideoCard";
 import RemoteVideoCard from "../components/RemoteVideoCard";
+import ControlBar from "../components/ControlBar";
 import { useWebRTC } from "../hooks/useWebRTC";
 
 function Home() {
-  const { localVideoRef, remoteStreams, joined, joinRoom, leaveRoom } =
-    useWebRTC();
+  const {
+    localVideoRef,
+    remoteStreams,
+    joined,
+    cameraEnabled,
+    micEnabled,
+    joinRoom,
+    leaveRoom,
+    toggleCamera,
+    toggleMic,
+  } = useWebRTC();
 
   return (
-    <main className="min-h-screen bg-slate-950 px-6 py-8">
+    <main className="min-h-screen bg-slate-950 px-6 py-8 pb-32">
       <Header />
 
       <section className="mx-auto grid max-w-6xl grid-cols-1 gap-6 md:grid-cols-2">
@@ -23,27 +33,19 @@ function Home() {
         ))}
       </section>
 
-      <div className="mt-8 flex justify-center gap-4">
-        {!joined ? (
-          <button
-            onClick={joinRoom}
-            className="rounded-xl bg-green-600 px-6 py-3 font-semibold text-white hover:bg-green-700"
-          >
-            Tham gia phòng
-          </button>
-        ) : (
-          <button
-            onClick={leaveRoom}
-            className="rounded-xl bg-red-600 px-6 py-3 font-semibold text-white hover:bg-red-700"
-          >
-            Rời phòng
-          </button>
-        )}
-      </div>
-
       <p className="mt-4 text-center text-slate-400">
         Số tab đang kết nối: {remoteStreams.length}
       </p>
+
+      <ControlBar
+        joined={joined}
+        cameraEnabled={cameraEnabled}
+        micEnabled={micEnabled}
+        onJoinRoom={joinRoom}
+        onLeaveRoom={leaveRoom}
+        onToggleCamera={toggleCamera}
+        onToggleMic={toggleMic}
+      />
     </main>
   );
 }
