@@ -4,37 +4,22 @@ type User = {
   id: number;
   name: string;
   email: string;
+  role: string;
 };
 
 function Dashboard() {
   const navigate = useNavigate();
 
-  const userRaw = localStorage.getItem("user");
-  const user: User | null = userRaw ? JSON.parse(userRaw) : null;
-
-  const handleLogout = () => {
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("user");
-    navigate("/login");
-  };
+  const user: User | null = JSON.parse(localStorage.getItem("user") || "null");
 
   return (
-    <main className="min-h-screen bg-slate-950 px-6 py-8 text-white">
+    <main className="min-h-full px-8 py-8">
       <div className="mx-auto max-w-5xl">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">
-              Xin chào, {user?.name ?? "User"}
-            </h1>
-            <p className="mt-2 text-slate-400">{user?.email}</p>
-          </div>
-
-          <button
-            onClick={handleLogout}
-            className="rounded-xl bg-red-600 px-5 py-3 font-semibold hover:bg-red-700"
-          >
-            Đăng xuất
-          </button>
+        <div>
+          <h1 className="text-3xl font-bold">
+            Xin chào, {user?.name ?? "User"}
+          </h1>
+          <p className="mt-2 text-slate-400">{user?.email}</p>
         </div>
 
         <div className="mt-12 grid gap-6 md:grid-cols-2">
@@ -46,13 +31,17 @@ function Dashboard() {
             <p className="mt-2 text-blue-100">Tạo phòng video call mới</p>
           </button>
 
-          <button
-            onClick={() => navigate("/room")}
-            className="rounded-2xl bg-slate-800 p-8 text-left shadow-xl hover:bg-slate-700"
-          >
-            <h2 className="text-2xl font-bold">Vào phòng test</h2>
-            <p className="mt-2 text-slate-400">Hiện tại dùng room test-room</p>
-          </button>
+          {user?.role === "admin" && (
+            <button
+              onClick={() => navigate("/admin/users")}
+              className="rounded-2xl bg-slate-800 p-8 text-left shadow-xl hover:bg-slate-700"
+            >
+              <h2 className="text-2xl font-bold">Quản lý user</h2>
+              <p className="mt-2 text-slate-400">
+                Xem danh sách tài khoản trong hệ thống
+              </p>
+            </button>
+          )}
         </div>
       </div>
     </main>

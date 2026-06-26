@@ -2,9 +2,22 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Home from "./pages/Home";
+import AdminUsers from "./pages/AdminUsers";
+import AppLayout from "./components/AppLayout";
+
+type User = {
+  id: number;
+  name: string;
+  email: string;
+  role: string;
+};
 
 function App() {
   const isLoggedIn = Boolean(localStorage.getItem("accessToken"));
+
+  const user: User | null = JSON.parse(localStorage.getItem("user") || "null");
+
+  const isAdmin = user?.role === "admin";
 
   return (
     <Routes>
@@ -17,15 +30,15 @@ function App() {
 
       <Route path="/login" element={<Login />} />
 
-      <Route
-        path="/dashboard"
-        element={isLoggedIn ? <Dashboard /> : <Navigate to="/login" />}
-      />
+      <Route element={isLoggedIn ? <AppLayout /> : <Navigate to="/login" />}>
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/room" element={<Home />} />
 
-      <Route
-        path="/room"
-        element={isLoggedIn ? <Home /> : <Navigate to="/login" />}
-      />
+        <Route
+          path="/admin/users"
+          element={isAdmin ? <AdminUsers /> : <Navigate to="/dashboard" />}
+        />
+      </Route>
     </Routes>
   );
 }
