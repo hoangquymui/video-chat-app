@@ -4,13 +4,7 @@ import Dashboard from "./pages/Dashboard";
 import Home from "./pages/Home";
 import AdminUsers from "./pages/AdminUsers";
 import AppLayout from "./components/AppLayout";
-
-type User = {
-  id: number;
-  name: string;
-  email: string;
-  role: string;
-};
+import type { User } from "./types/user.type";
 
 function App() {
   const isLoggedIn = Boolean(localStorage.getItem("accessToken"));

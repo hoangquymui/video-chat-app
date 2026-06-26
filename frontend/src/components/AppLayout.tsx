@@ -18,7 +18,7 @@ type User = {
 
 function AppLayout() {
   const navigate = useNavigate();
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
 
   const user: User | null = JSON.parse(localStorage.getItem("user") || "null");
 

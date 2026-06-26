@@ -3,12 +3,7 @@ import VideoCard from "../components/VideoCard";
 import RemoteVideoCard from "../components/RemoteVideoCard";
 import ControlBar from "../components/ControlBar";
 import { useWebRTC } from "../hooks/useWebRTC";
-
-type User = {
-  id: number;
-  name: string;
-  email: string;
-};
+import type { User } from "../types/user.type";
 
 function Home() {
   const {

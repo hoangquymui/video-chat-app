@@ -1,11 +1,5 @@
 import { useNavigate } from "react-router-dom";
-
-type User = {
-  id: number;
-  name: string;
-  email: string;
-  role: string;
-};
+import type { User } from "../types/user.type";
 
 function Dashboard() {
   const navigate = useNavigate();
