@@ -1,7 +1,13 @@
 import { useState } from "react";
 import { Link, Outlet, useNavigate } from "react-router-dom";
-import { Menu, House, Video, Users, LogOut } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import {
+  House,
+  LogOut,
+  Menu,
+  Users,
+  Video,
+  type LucideIcon,
+} from "lucide-react";
 
 type User = {
   id: number;
@@ -25,30 +31,26 @@ function AppLayout() {
   return (
     <main className="flex h-screen overflow-hidden bg-slate-950 text-white">
       <aside
-        className={`flex h-full flex-col overflow-hidden border-r border-slate-800 bg-slate-900 py-4 transition-all duration-150 ease-out ${
-          collapsed ? "w-[70px] items-center px-0" : "w-[280px] px-3"
+        className={`flex h-full flex-col overflow-hidden border-r border-slate-800 bg-slate-900 px-3 py-4 transition-all duration-150 ease-out ${
+          collapsed ? "w-[72px]" : "w-[280px]"
         }`}
       >
         <button
           onClick={() => setCollapsed((prev) => !prev)}
-          className={`mb-6 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-800 text-xl transition-all hover:bg-slate-700 ${
-            collapsed ? "self-center" : ""
-          }`}
+          className="mb-6 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-800 transition-colors hover:bg-slate-700"
+          title={collapsed ? "Mở menu" : "Thu gọn menu"}
         >
-          ☰
+          <Menu size={21} />
         </button>
 
-        <nav
-          className={`mt-8 flex flex-col gap-2 ${
-            collapsed ? "items-center" : ""
-          }`}
-        >
+        <nav className="mt-8 flex flex-col gap-2">
           <NavItem
             collapsed={collapsed}
             to="/dashboard"
             icon={House}
             label="Dashboard"
           />
+
           <NavItem
             collapsed={collapsed}
             to="/room"
@@ -68,11 +70,20 @@ function AppLayout() {
 
         <button
           onClick={handleLogout}
-          className={`mt-auto flex h-11 items-center justify-center rounded-xl bg-red-600 font-semibold transition-all hover:bg-red-700 ${
-            collapsed ? "w-11 text-xl" : "w-full"
-          }`}
+          className="mt-auto flex h-11 shrink-0 items-center overflow-hidden rounded-xl bg-red-600 font-semibold transition-colors hover:bg-red-700"
+          title="Đăng xuất"
         >
-          {collapsed ? "⏻" : "Đăng xuất"}
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center">
+            <LogOut size={20} />
+          </div>
+
+          <div
+            className={`overflow-hidden transition-all duration-150 ease-out ${
+              collapsed ? "w-0 opacity-0" : "w-32 opacity-100"
+            }`}
+          >
+            <span className="whitespace-nowrap">Đăng xuất</span>
+          </div>
         </button>
       </aside>
 
@@ -95,13 +106,19 @@ function NavItem({ collapsed, to, icon: Icon, label }: NavItemProps) {
     <Link
       to={to}
       title={label}
-      className={`flex h-11 items-center rounded-xl text-slate-300 transition-all hover:bg-slate-800 hover:text-white ${
-        collapsed ? "w-11 justify-center" : "w-full px-4"
-      }`}
+      className="flex h-11 items-center overflow-hidden rounded-xl text-slate-300 transition-colors hover:bg-slate-800 hover:text-white"
     >
-      <Icon size={20} className="shrink-0" />
+      <div className="flex h-11 w-11 shrink-0 items-center justify-center">
+        <Icon size={20} />
+      </div>
 
-      {!collapsed && <span className="ml-3 whitespace-nowrap">{label}</span>}
+      <div
+        className={`overflow-hidden transition-all duration-150 ease-out ${
+          collapsed ? "w-0 opacity-0" : "w-40 opacity-100"
+        }`}
+      >
+        <span className="whitespace-nowrap">{label}</span>
+      </div>
     </Link>
   );
 }
