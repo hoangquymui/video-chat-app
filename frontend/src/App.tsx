@@ -4,7 +4,7 @@ import Home from "./pages/Home";
 import Call from "./pages/Call";
 import AdminUsers from "./pages/AdminUsers";
 import AppLayout from "./components/AppLayout";
-import { useAuth } from "./contexts/AuthContext";
+import { useAuth } from "./hooks/useAuth";
 
 function App() {
   const { isLoggedIn, user } = useAuth();
