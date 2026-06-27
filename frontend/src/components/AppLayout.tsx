@@ -8,17 +8,11 @@ import {
   Video,
   type LucideIcon,
 } from "lucide-react";
-
-type User = {
-  id: number;
-  name: string;
-  email: string;
-  role: string;
-};
+import type { User } from "../types/user.type";
 
 function AppLayout() {
   const navigate = useNavigate();
-  const [collapsed, setCollapsed] = useState(true);
+  const [collapsed, setCollapsed] = useState(false);
 
   const user: User | null = JSON.parse(localStorage.getItem("user") || "null");
 
@@ -32,7 +26,7 @@ function AppLayout() {
     <main className="flex h-screen overflow-hidden bg-slate-950 text-white">
       <aside
         className={`flex h-full flex-col overflow-hidden border-r border-slate-800 bg-slate-900 px-3 py-4 transition-all duration-150 ease-out ${
-          collapsed ? "w-[72px]" : "w-[280px]"
+          collapsed ? "w-[72px]" : "w-[180px]"
         }`}
       >
         <button
@@ -43,19 +37,28 @@ function AppLayout() {
           <Menu size={21} />
         </button>
 
+        <div
+          className={`overflow-hidden transition-all duration-150 ease-out ${
+            collapsed ? "h-0 opacity-0" : "h-14 opacity-100"
+          }`}
+        >
+          <h1 className="truncate text-xl font-bold">Video Call</h1>
+          <p className="mt-1 truncate text-sm text-slate-400">{user?.name}</p>
+        </div>
+
         <nav className="mt-8 flex flex-col gap-2">
           <NavItem
             collapsed={collapsed}
             to="/dashboard"
             icon={House}
-            label="Dashboard"
+            label="Đoạn chat"
           />
 
           <NavItem
             collapsed={collapsed}
-            to="/room"
+            to="/call"
             icon={Video}
-            label="Phòng họp"
+            label="Phòng gọi"
           />
 
           {user?.role === "admin" && (
@@ -87,7 +90,7 @@ function AppLayout() {
         </button>
       </aside>
 
-      <section className="h-full flex-1 overflow-auto bg-slate-950">
+      <section className="h-full flex-1 overflow-hidden bg-slate-950">
         <Outlet />
       </section>
     </main>

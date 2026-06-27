@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Not, Repository } from 'typeorm';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './entity/user.entity';
@@ -66,5 +66,23 @@ export class UsersService {
       message: 'Xoá user thành công',
       id,
     };
+  }
+
+  findChatUsers(currentUserId: number) {
+    return this.usersRepository.find({
+      where: {
+        id: Not(currentUserId),
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        createdAt: true,
+      },
+      order: {
+        name: 'ASC',
+      },
+    });
   }
 }

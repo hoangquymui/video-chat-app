@@ -6,6 +6,11 @@ export const getUsersApi = async () => {
   return response.data;
 };
 
+export const getChatUsersApi = async () => {
+  const response = await api.get<User[]>("/users/chat");
+  return response.data;
+};
+
 export const createUserApi = async (data: CreateUserData) => {
   const response = await api.post<User>("/users", data);
   return response.data;

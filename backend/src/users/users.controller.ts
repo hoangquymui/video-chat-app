@@ -7,10 +7,23 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  Req,
+  UseGuards,
 } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+import type { Request } from 'express';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UsersService } from './users.service';
+
+type AuthRequest = Request & {
+  user: {
+    id: number;
+    email: string;
+    name: string;
+    role: string;
+  };
+};
 
 @Controller('users')
 export class UsersController {
@@ -19,6 +32,12 @@ export class UsersController {
   @Post()
   create(@Body() createUserDto: CreateUserDto) {
     return this.usersService.create(createUserDto);
+  }
+
+  @Get('chat')
+  @UseGuards(AuthGuard('jwt'))
+  findChatUsers(@Req() req: AuthRequest) {
+    return this.usersService.findChatUsers(req.user.id);
   }
 
   @Get()
