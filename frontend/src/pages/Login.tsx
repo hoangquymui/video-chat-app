@@ -5,7 +5,7 @@ import { loginApi } from "../api/auth.api";
 function Login() {
   const navigate = useNavigate();
 
-  const [email, setEmail] = useState("hoang@gmail.com");
+  const [email, setEmail] = useState("admin@gm.com");
   const [password, setPassword] = useState("123456");
   const [error, setError] = useState("");
 
@@ -22,7 +22,7 @@ function Login() {
       localStorage.setItem("accessToken", data.accessToken);
       localStorage.setItem("user", JSON.stringify(data.user));
 
-      navigate("/dashboard");
+      window.location.href = "/home";
     } catch (error) {
       console.error(error);
       setError("Email hoặc mật khẩu không đúng");

@@ -43,6 +43,13 @@ export function useWebRTC() {
   };
 
   const startLocalCamera = async () => {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      alert(
+        "Trình duyệt đang chặn camera/micro. Hãy dùng localhost, HTTPS, hoặc bật quyền insecure origin cho IP LAN.",
+      );
+      return;
+    }
+
     const stream = await navigator.mediaDevices.getUserMedia({
       video: true,
       audio: true,
