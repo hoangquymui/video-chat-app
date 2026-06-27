@@ -10,12 +10,12 @@ export default defineConfig({
     port: 5174,
     proxy: {
       "/api": {
-        target: "http://192.168.2.138:3000",
+        target: "http://127.0.0.1:3000",
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ""),
       },
       "/socket.io": {
-        target: "http://192.168.2.138:3000",
+        target: "http://127.0.0.1:3000",
         ws: true,
         changeOrigin: true,
       },

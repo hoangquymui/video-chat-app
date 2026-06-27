@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, Outlet, useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 import {
   House,
   LogOut,
@@ -8,18 +9,15 @@ import {
   Video,
   type LucideIcon,
 } from "lucide-react";
-import type { User } from "../types/user.type";
 
 function AppLayout() {
   const navigate = useNavigate();
-  const [collapsed, setCollapsed] = useState(false);
-
-  const user: User | null = JSON.parse(localStorage.getItem("user") || "null");
+  const [collapsed, setCollapsed] = useState(true);
+  const { user, logout } = useAuth();
 
   const handleLogout = () => {
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("user");
-    window.location.href = "/login";
+    logout();
+    navigate("/login", { replace: true });
   };
 
   return (
@@ -49,7 +47,7 @@ function AppLayout() {
         <nav className="mt-8 flex flex-col gap-2">
           <NavItem
             collapsed={collapsed}
-            to="/dashboard"
+            to="/home"
             icon={House}
             label="Đoạn chat"
           />

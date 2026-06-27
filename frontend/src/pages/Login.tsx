@@ -1,11 +1,10 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { loginApi } from "../api/auth.api";
+import { useAuth } from "../contexts/AuthContext";
 
 function Login() {
-  const navigate = useNavigate();
+  const { login } = useAuth();
 
-  const [email, setEmail] = useState("admin@gm.com");
+  const [email, setEmail] = useState("hoang@gmail.com");
   const [password, setPassword] = useState("123456");
   const [error, setError] = useState("");
 
@@ -14,15 +13,7 @@ function Login() {
     setError("");
 
     try {
-      const data = await loginApi({
-        email,
-        password,
-      });
-
-      localStorage.setItem("accessToken", data.accessToken);
-      localStorage.setItem("user", JSON.stringify(data.user));
-
-      window.location.href = "/home";
+      await login({ email, password });
     } catch (error) {
       console.error(error);
       setError("Email hoặc mật khẩu không đúng");
@@ -46,7 +37,6 @@ function Login() {
             onChange={(event) => setEmail(event.target.value)}
             type="email"
             className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-white outline-none focus:border-blue-500"
-            placeholder="email@example.com"
           />
         </div>
 
@@ -57,7 +47,6 @@ function Login() {
             onChange={(event) => setPassword(event.target.value)}
             type="password"
             className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-white outline-none focus:border-blue-500"
-            placeholder="Nhập mật khẩu"
           />
         </div>
 

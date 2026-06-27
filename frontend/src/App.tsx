@@ -4,12 +4,10 @@ import Home from "./pages/Home";
 import Call from "./pages/Call";
 import AdminUsers from "./pages/AdminUsers";
 import AppLayout from "./components/AppLayout";
-import type { User } from "./types/user.type";
+import { useAuth } from "./contexts/AuthContext";
 
 function App() {
-  const isLoggedIn = Boolean(localStorage.getItem("accessToken"));
-
-  const user: User | null = JSON.parse(localStorage.getItem("user") || "null");
+  const { isLoggedIn, user } = useAuth();
 
   const isAdmin = user?.role === "admin";
 
@@ -29,9 +27,7 @@ function App() {
 
       <Route element={isLoggedIn ? <AppLayout /> : <Navigate to="/login" />}>
         <Route path="/home" element={<Home />} />
-
         <Route path="/call" element={<Call />} />
-
         <Route path="/room" element={<Navigate to="/call" />} />
 
         <Route
