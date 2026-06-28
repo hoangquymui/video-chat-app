@@ -8,6 +8,8 @@ import {
 import UserForm from "../components/UserForm";
 import UserTable from "../components/UserTable";
 import type { CreateUserData, UpdateUserData, User } from "../types/user.type";
+import { ArrowLeft } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 type FormMode = "create" | "edit";
 
@@ -18,7 +20,7 @@ function AdminUsers() {
   const [formOpen, setFormOpen] = useState(false);
   const [formMode, setFormMode] = useState<FormMode>("create");
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-
+  const navigate = useNavigate();
   const loadUsers = async () => {
     try {
       setLoading(true);
@@ -84,12 +86,21 @@ function AdminUsers() {
     <main className="min-h-full px-8 py-8">
       <div className="mx-auto max-w-6xl">
         <div className="flex items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-white">Quản lý user</h1>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => navigate(-1)}
+              className="flex h-11 w-11 items-center justify-center rounded-full bg-slate-800 text-slate-300 transition hover:bg-slate-700 hover:text-white"
+              title="Quay lại"
+            >
+              <ArrowLeft size={22} />
+            </button>
 
-            <p className="mt-2 text-slate-400">
-              Thêm, sửa, xoá tài khoản trong hệ thống.
-            </p>
+            <div>
+              <h1 className="text-3xl font-bold text-white">Quản lý user</h1>
+              <p className="mt-1 text-slate-400">
+                Thêm, sửa, xoá tài khoản trong hệ thống.
+              </p>
+            </div>
           </div>
 
           <button

@@ -4,7 +4,7 @@ import { useAuth } from "../hooks/useAuth";
 function Login() {
   const { login } = useAuth();
 
-  const [email, setEmail] = useState("hoang@gmail.com");
+  const [email, setEmail] = useState("mui@gm.com");
   const [password, setPassword] = useState("123456");
   const [error, setError] = useState("");
 

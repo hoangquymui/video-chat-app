@@ -12,9 +12,7 @@ type RemoteStream = {
   stream: MediaStream;
 };
 
-const ROOM_ID = "test-room";
-
-export function useWebRTC() {
+export function useWebRTC(roomId: string) {
   const localVideoRef = useRef<HTMLVideoElement | null>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
 
@@ -43,28 +41,69 @@ export function useWebRTC() {
   };
 
   const startLocalCamera = async () => {
-    if (!navigator.mediaDevices?.getUserMedia) {
-      alert(
-        "Trình duyệt đang chặn camera/micro. Hãy dùng localhost, HTTPS, hoặc bật quyền insecure origin cho IP LAN.",
-      );
-      return;
+    try {
+      if (!navigator.mediaDevices?.getUserMedia) {
+        alert(
+          "Trình duyệt không hỗ trợ camera/micro hoặc đang không chạy trên HTTPS/localhost.",
+        );
+        throw new Error("getUserMedia is not supported");
+      }
+
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const hasCamera = devices.some((device) => device.kind === "videoinput");
+
+      if (!hasCamera) {
+        alert("Không tìm thấy camera trên thiết bị này.");
+        throw new Error("No camera device found");
+      }
+
+      localStreamRef.current?.getTracks().forEach((track) => track.stop());
+      localStreamRef.current = null;
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: true,
+        audio: true,
+      });
+
+      const videoTracks = stream.getVideoTracks();
+
+      if (videoTracks.length === 0) {
+        stream.getTracks().forEach((track) => track.stop());
+        alert("Bạn đã cấp quyền nhưng hệ thống không nhận được camera.");
+        throw new Error("Permission granted but no video track found");
+      }
+
+      localStreamRef.current = stream;
+
+      if (localVideoRef.current) {
+        localVideoRef.current.srcObject = stream;
+      }
+
+      setCameraEnabled(true);
+      setMicEnabled(stream.getAudioTracks().some((track) => track.enabled));
+
+      return stream;
+    } catch (error) {
+      console.error("Lỗi mở camera:", error);
+
+      if (error instanceof DOMException) {
+        if (error.name === "NotAllowedError") {
+          alert("Bạn chưa cấp quyền camera/micro.");
+        }
+
+        if (error.name === "NotFoundError") {
+          alert("Không tìm thấy camera hoặc micro trên thiết bị.");
+        }
+
+        if (error.name === "NotReadableError") {
+          alert(
+            "Không thể mở camera. Camera có thể đang bị ứng dụng khác sử dụng hoặc thiết bị không có camera.",
+          );
+        }
+      }
+
+      throw error;
     }
-
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: true,
-      audio: true,
-    });
-
-    localStreamRef.current = stream;
-
-    if (localVideoRef.current) {
-      localVideoRef.current.srcObject = stream;
-    }
-
-    setCameraEnabled(true);
-    setMicEnabled(true);
-
-    return stream;
   };
 
   const removePeer = (remotePeerId: string) => {
@@ -100,7 +139,7 @@ export function useWebRTC() {
     peer.onicecandidate = (event) => {
       if (event.candidate) {
         socket.emit("candidate", {
-          roomId: ROOM_ID,
+          roomId,
           to: remotePeerId,
           candidate: event.candidate.toJSON(),
         });
@@ -161,7 +200,7 @@ export function useWebRTC() {
     await peer.setLocalDescription(offer);
 
     socket.emit("offer", {
-      roomId: ROOM_ID,
+      roomId,
       to: remotePeerId,
       offer,
     });
@@ -184,7 +223,7 @@ export function useWebRTC() {
     await peer.setLocalDescription(answer);
 
     socket.emit("answer", {
-      roomId: ROOM_ID,
+      roomId,
       to: remotePeerId,
       answer,
     });
@@ -288,7 +327,7 @@ export function useWebRTC() {
     const user = JSON.parse(localStorage.getItem("user") || "{}");
 
     socket.emit("join-room", {
-      roomId: ROOM_ID,
+      roomId,
       user: {
         id: user.id,
         name: user.name,
@@ -300,7 +339,7 @@ export function useWebRTC() {
 
   const leaveRoom = () => {
     socket.emit("leave-room", {
-      roomId: ROOM_ID,
+      roomId,
     });
 
     unregisterSocketEvents();

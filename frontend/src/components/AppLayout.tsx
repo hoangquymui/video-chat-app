@@ -7,6 +7,7 @@ import {
   Menu,
   Users,
   Video,
+  Shield,
   type LucideIcon,
 } from "lucide-react";
 
@@ -45,26 +46,21 @@ function AppLayout() {
         </div>
 
         <nav className="mt-8 flex flex-col gap-2">
-          <NavItem
-            collapsed={collapsed}
-            to="/home"
-            icon={House}
-            label="Đoạn chat"
-          />
+          <NavItem collapsed={collapsed} to="/home" icon={House} label="Chat" />
 
           <NavItem
             collapsed={collapsed}
-            to="/call"
+            to="/rooms"
             icon={Video}
-            label="Phòng gọi"
+            label="Phòng họp"
           />
 
           {user?.role === "admin" && (
             <NavItem
               collapsed={collapsed}
-              to="/admin/users"
-              icon={Users}
-              label="Quản lý user"
+              to="/admin"
+              icon={Shield}
+              label="Admin"
             />
           )}
         </nav>

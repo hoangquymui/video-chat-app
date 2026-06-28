@@ -4,8 +4,11 @@ import RemoteVideoCard from "../components/RemoteVideoCard";
 import ControlBar from "../components/ControlBar";
 import { useWebRTC } from "../hooks/useWebRTC";
 import type { User } from "../types/user.type";
+import { useParams } from "react-router-dom";
 
 function Call() {
+  const { roomId } = useParams();
+
   const {
     localVideoRef,
     remoteStreams,
@@ -16,7 +19,7 @@ function Call() {
     leaveRoom,
     toggleCamera,
     toggleMic,
-  } = useWebRTC();
+  } = useWebRTC(roomId ?? "test-room");
 
   const user: User | null = JSON.parse(localStorage.getItem("user") || "null");
 

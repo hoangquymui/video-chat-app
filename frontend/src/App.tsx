@@ -3,7 +3,10 @@ import Login from "./pages/Login";
 import Home from "./pages/Home";
 import Call from "./pages/Call";
 import AdminUsers from "./pages/AdminUsers";
+import Admin from "./pages/Admin";
+import AdminGroups from "./pages/AdminGroups";
 import AppLayout from "./components/AppLayout";
+import Rooms from "./pages/Rooms";
 import { useAuth } from "./hooks/useAuth";
 
 function App() {
@@ -28,11 +31,22 @@ function App() {
       <Route element={isLoggedIn ? <AppLayout /> : <Navigate to="/login" />}>
         <Route path="/home" element={<Home />} />
         <Route path="/call" element={<Call />} />
-        <Route path="/room" element={<Navigate to="/call" />} />
+        <Route path="/call/:roomId" element={<Call />} />
+        <Route path="/rooms" element={<Rooms />} />
+
+        <Route
+          path="/admin"
+          element={isAdmin ? <Admin /> : <Navigate to="/home" />}
+        />
 
         <Route
           path="/admin/users"
           element={isAdmin ? <AdminUsers /> : <Navigate to="/home" />}
+        />
+
+        <Route
+          path="/admin/groups"
+          element={isAdmin ? <AdminGroups /> : <Navigate to="/home" />}
         />
       </Route>
 

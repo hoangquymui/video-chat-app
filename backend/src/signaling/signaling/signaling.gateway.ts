@@ -134,4 +134,31 @@ export class SignalingGateway
 
     console.log(`Client ${client.id} left room ${data.roomId}`);
   }
+
+  @SubscribeMessage('join-conversation')
+  handleJoinConversation(
+    @MessageBody() data: { conversationId: number },
+    @ConnectedSocket() client: Socket,
+  ) {
+    client.join(`conversation-${data.conversationId}`);
+  }
+
+  @SubscribeMessage('send-message')
+  handleSendMessage(
+    @MessageBody()
+    data: {
+      conversationId: number;
+      message: {
+        id: number;
+        conversationId: number;
+        senderId: number;
+        content: string;
+        createdAt: string;
+      };
+    },
+  ) {
+    this.server
+      .to(`conversation-${data.conversationId}`)
+      .emit('new-message', data.message);
+  }
 }
