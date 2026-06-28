@@ -15,16 +15,21 @@ function RemoteVideoCard({ title, stream }: RemoteVideoCardProps) {
   }, [stream]);
 
   return (
-    <div className="rounded-2xl bg-slate-800 p-4 shadow-lg">
-      <h2 className="mb-3 text-lg font-semibold text-white">{title}</h2>
-
+    <div className="relative aspect-video overflow-hidden rounded-2xl bg-slate-900 shadow-lg">
       <video
         ref={videoRef}
         autoPlay
         playsInline
-        muted
-        className="h-[300px] w-full rounded-xl bg-black object-cover"
+        className="h-full w-full object-cover"
       />
+
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+
+      <div className="absolute bottom-4 left-4">
+        <span className="rounded-full bg-black/50 px-3 py-1 text-sm font-medium text-white backdrop-blur">
+          {title}
+        </span>
+      </div>
     </div>
   );
 }

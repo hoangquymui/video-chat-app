@@ -1,5 +1,6 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { socket } from "../services/socket";
+import { useAuth } from "./useAuth";
 
 type RemoteUser = {
   id: number;
@@ -10,6 +11,11 @@ type RemoteStream = {
   peerId: string;
   name: string;
   stream: MediaStream;
+};
+
+type OnlineUser = {
+  id: number;
+  name: string;
 };
 
 export function useWebRTC(roomId: string) {
@@ -23,6 +29,8 @@ export function useWebRTC(roomId: string) {
   const [cameraEnabled, setCameraEnabled] = useState(true);
   const [micEnabled, setMicEnabled] = useState(true);
   const [remoteStreams, setRemoteStreams] = useState<RemoteStream[]>([]);
+  const [onlineUsers, setOnlineUsers] = useState<OnlineUser[]>([]);
+  const { user } = useAuth();
 
   const toggleCamera = () => {
     const videoTrack = localStreamRef.current?.getVideoTracks()[0];
@@ -261,6 +269,10 @@ export function useWebRTC(roomId: string) {
       },
     );
 
+    socket.on("call-users", ({ users }: { users: OnlineUser[] }) => {
+      setOnlineUsers(users);
+    });
+
     socket.on(
       "offer",
       async ({
@@ -305,6 +317,10 @@ export function useWebRTC(roomId: string) {
     socket.on("user-left", ({ from }: { from: string }) => {
       removePeer(from);
     });
+
+    socket.on("room-users", ({ users }: { users: OnlineUser[] }) => {
+      setOnlineUsers(users);
+    });
   };
 
   const unregisterSocketEvents = () => {
@@ -313,6 +329,8 @@ export function useWebRTC(roomId: string) {
     socket.off("answer");
     socket.off("candidate");
     socket.off("user-left");
+    socket.off("room-users");
+    socket.off("call-users");
   };
 
   const joinRoom = async () => {
@@ -322,15 +340,14 @@ export function useWebRTC(roomId: string) {
       socket.connect();
     }
 
+    unregisterSocketEvents();
     registerSocketEvents();
-
-    const user = JSON.parse(localStorage.getItem("user") || "{}");
 
     socket.emit("join-room", {
       roomId,
       user: {
-        id: user.id,
-        name: user.name,
+        id: user?.id,
+        name: user?.name,
       },
     });
 
@@ -341,8 +358,6 @@ export function useWebRTC(roomId: string) {
     socket.emit("leave-room", {
       roomId,
     });
-
-    unregisterSocketEvents();
 
     peerConnectionsRef.current.forEach((peer) => {
       peer.close();
@@ -367,12 +382,35 @@ export function useWebRTC(roomId: string) {
     setMicEnabled(true);
   };
 
+  useEffect(() => {
+    if (!user || !roomId) return;
+
+    if (!socket.connected) {
+      socket.connect();
+    }
+
+    registerSocketEvents();
+
+    socket.emit("join-room-preview", {
+      roomId,
+      user: {
+        id: user.id,
+        name: user.name,
+      },
+    });
+
+    return () => {
+      unregisterSocketEvents();
+    };
+  }, [roomId, user]);
+
   return {
     localVideoRef,
     remoteStreams,
     joined,
     cameraEnabled,
     micEnabled,
+    onlineUsers,
     joinRoom,
     leaveRoom,
     toggleCamera,

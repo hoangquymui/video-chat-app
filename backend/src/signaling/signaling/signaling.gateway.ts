@@ -36,6 +36,9 @@ type SignalPayload = {
 export class SignalingGateway
   implements OnGatewayConnection, OnGatewayDisconnect
 {
+  private previewUsers = new Map<string, Map<string, SocketUser>>();
+  private callUsers = new Map<string, Map<string, SocketUser>>();
+
   @WebSocketServer()
   server!: Server;
 
@@ -44,15 +47,46 @@ export class SignalingGateway
   }
 
   handleDisconnect(client: Socket) {
-    console.log('Client disconnected:', client.id);
+    const roomId = client.data.roomId as string | undefined;
 
-    const roomId = client.data.roomId;
+    if (!roomId) return;
 
-    if (roomId) {
-      client.to(roomId).emit('user-left', {
-        from: client.id,
+    const users = this.callUsers.get(roomId);
+
+    if (users) {
+      users.delete(client.id);
+
+      this.server.to(roomId).emit('room-users', {
+        users: Array.from(users.values()),
       });
+
+      if (users.size === 0) {
+        this.callUsers.delete(roomId);
+      }
     }
+  }
+
+  @SubscribeMessage('join-room-preview')
+  handleJoinRoomPreview(
+    @MessageBody() data: { roomId: string; user: SocketUser },
+    @ConnectedSocket() client: Socket,
+  ) {
+    const { roomId, user } = data;
+
+    if (!this.previewUsers.has(roomId)) {
+      this.previewUsers.set(roomId, new Map());
+    }
+
+    this.previewUsers.get(roomId)!.set(client.id, user);
+
+    client.data.previewRoomId = roomId;
+    client.data.user = user;
+
+    client.join(`preview-${roomId}`);
+
+    this.server.to(`preview-${roomId}`).emit('call-users', {
+      users: Array.from(this.callUsers.get(roomId)?.values() ?? []),
+    });
   }
 
   @SubscribeMessage('join-room')
@@ -67,8 +101,19 @@ export class SignalingGateway
     const { roomId, user } = data;
 
     client.join(roomId);
+
+    if (!this.callUsers.has(roomId)) {
+      this.callUsers.set(roomId, new Map());
+    }
+
+    this.callUsers.get(roomId)!.set(client.id, user);
+
     client.data.roomId = roomId;
     client.data.user = user;
+
+    this.server.to(`preview-${roomId}`).emit('call-users', {
+      users: Array.from(this.callUsers.get(roomId)!.values()),
+    });
 
     client.to(roomId).emit('user-joined', {
       from: client.id,
@@ -123,16 +168,36 @@ export class SignalingGateway
     @MessageBody() data: { roomId: string },
     @ConnectedSocket() client: Socket,
   ) {
-    client.leave(data.roomId);
+    const { roomId } = data;
 
-    client.to(data.roomId).emit('user-left', {
+    const users = this.callUsers.get(roomId);
+
+    if (users) {
+      users.delete(client.id);
+
+      const currentUsers = Array.from(users.values());
+
+      this.server.to(`preview-${roomId}`).emit('call-users', {
+        users: currentUsers,
+      });
+
+      client.emit('call-users', {
+        users: currentUsers,
+      });
+
+      if (users.size === 0) {
+        this.callUsers.delete(roomId);
+      }
+    }
+
+    client.to(roomId).emit('user-left', {
       from: client.id,
     });
 
+    client.leave(roomId);
     client.data.roomId = null;
-    client.data.user = null;
 
-    console.log(`Client ${client.id} left room ${data.roomId}`);
+    console.log(`Client ${client.id} left room ${roomId}`);
   }
 
   @SubscribeMessage('join-conversation')

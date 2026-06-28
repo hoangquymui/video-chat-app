@@ -337,13 +337,6 @@ function Rooms() {
                       <span>⌄</span>
                     </button>
                   </div>
-
-                  <button
-                    onClick={() => navigate(`/call/${selectedRoom.id}`)}
-                    className="mt-8 w-full rounded-xl bg-blue-600 py-3 font-semibold hover:bg-blue-700"
-                  >
-                    Tham gia cuộc gọi
-                  </button>
                 </>
               ) : (
                 <div className="text-center text-slate-400">
