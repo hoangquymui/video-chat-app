@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Info,
   MoreHorizontal,
@@ -16,6 +16,7 @@ import { useAuth } from "../hooks/useAuth";
 import { useDirectChat } from "../hooks/useDirectChat";
 
 function Home() {
+  const bottomRef = useRef<HTMLDivElement | null>(null);
   const { user: currentUser } = useAuth();
 
   const { selectedUser, messages, messagesLoading, selectUser, sendMessage } =
@@ -57,6 +58,12 @@ function Home() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({
+      behavior: "smooth",
+    });
+  }, [messages]);
 
   useEffect(() => {
     loadUsers();
@@ -199,7 +206,7 @@ function Home() {
                     </div>
                   </header>
 
-                  <div className="min-h-0 flex-1 overflow-auto px-6 py-5">
+                  <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto px-6 py-5">
                     {messagesLoading ? (
                       <div className="flex h-full items-center justify-center text-slate-500">
                         Đang tải tin nhắn...
@@ -245,6 +252,8 @@ function Home() {
                             </div>
                           );
                         })}
+
+                        <div ref={bottomRef} />
                       </div>
                     )}
                   </div>

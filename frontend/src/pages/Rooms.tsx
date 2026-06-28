@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Info, Plus, Search, Send, Video } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Group, Panel, Separator } from "react-resizable-panels";
@@ -17,6 +17,7 @@ function Rooms() {
   const { selectedRoom, messages, messagesLoading, selectRoom, sendMessage } =
     useRoomChat();
 
+  const bottomRef = useRef<HTMLDivElement | null>(null);
   const [groupModalOpen, setGroupModalOpen] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]);
@@ -58,6 +59,12 @@ function Rooms() {
       alert("Không tải được danh sách người dùng.");
     }
   };
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({
+      behavior: "smooth",
+    });
+  }, [messages]);
 
   useEffect(() => {
     loadRooms();
@@ -211,7 +218,7 @@ function Rooms() {
                     </div>
                   </header>
 
-                  <div className="min-h-0 flex-1 overflow-auto px-6 py-5">
+                  <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto px-6 py-5">
                     {messagesLoading ? (
                       <div className="flex h-full items-center justify-center text-slate-500">
                         Đang tải tin nhắn...
@@ -257,6 +264,8 @@ function Rooms() {
                             </div>
                           );
                         })}
+
+                        <div ref={bottomRef} />
                       </div>
                     )}
                   </div>
