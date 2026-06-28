@@ -39,6 +39,11 @@ export class RoomsController {
     return this.roomsService.findMyRooms(req.user.id);
   }
 
+  @Get()
+  findAll() {
+    return this.roomsService.findAll();
+  }
+
   @Patch(':id')
   update(
     @Param('id', ParseIntPipe) id: number,
@@ -50,5 +55,21 @@ export class RoomsController {
   @Delete(':id')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.roomsService.remove(id);
+  }
+
+  @Post(':roomId/members/:userId')
+  addMember(
+    @Param('roomId', ParseIntPipe) roomId: number,
+    @Param('userId', ParseIntPipe) userId: number,
+  ) {
+    return this.roomsService.addMember(roomId, userId);
+  }
+
+  @Delete(':roomId/members/:userId')
+  removeMember(
+    @Param('roomId', ParseIntPipe) roomId: number,
+    @Param('userId', ParseIntPipe) userId: number,
+  ) {
+    return this.roomsService.removeMember(roomId, userId);
   }
 }

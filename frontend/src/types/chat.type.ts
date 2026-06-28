@@ -18,3 +18,11 @@ export type Message = {
 export type ChatUser = User & {
   conversation?: Conversation;
 };
+
+export type RoomMessage = {
+  id: number;
+  roomId: number;
+  senderId: number;
+  content: string;
+  createdAt: string;
+};

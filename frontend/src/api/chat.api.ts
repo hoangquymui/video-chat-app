@@ -1,5 +1,5 @@
 import { api } from "./axios";
-import type { Conversation, Message } from "../types/chat.type";
+import type { Conversation, Message, RoomMessage } from "../types/chat.type";
 
 export const findOrCreateDirectConversationApi = async (userId: number) => {
   const response = await api.post<Conversation>(`/chat/direct/${userId}`);
@@ -20,6 +20,23 @@ export const sendMessageApi = async (
 ) => {
   const response = await api.post<Message>(
     `/chat/conversations/${conversationId}/messages`,
+    { content },
+  );
+
+  return response.data;
+};
+
+export const getRoomMessagesApi = async (roomId: number) => {
+  const response = await api.get<RoomMessage[]>(
+    `/chat/rooms/${roomId}/messages`,
+  );
+
+  return response.data;
+};
+
+export const sendRoomMessageApi = async (roomId: number, content: string) => {
+  const response = await api.post<RoomMessage>(
+    `/chat/rooms/${roomId}/messages`,
     { content },
   );
 

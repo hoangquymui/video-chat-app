@@ -57,4 +57,22 @@ export class ChatController {
       body.content,
     );
   }
+
+  @Get('rooms/:roomId/messages')
+  findRoomMessages(@Param('roomId', ParseIntPipe) roomId: number) {
+    return this.chatService.findRoomMessages(roomId);
+  }
+
+  @Post('rooms/:roomId/messages')
+  createRoomMessage(
+    @Param('roomId', ParseIntPipe) roomId: number,
+    @Body() body: CreateMessageDto,
+    @Req() req: AuthRequest,
+  ) {
+    return this.chatService.createRoomMessage(
+      roomId,
+      req.user.id,
+      body.content,
+    );
+  }
 }

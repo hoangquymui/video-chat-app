@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Info, Plus, Search, Video } from "lucide-react";
+import { Info, Plus, Search, Send, Video } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Group, Panel, Separator } from "react-resizable-panels";
 import { getMyRoomsApi, createRoomApi } from "../api/room.api";
@@ -7,16 +7,22 @@ import { getChatUsersApi } from "../api/user.api";
 import CreateGroupModal from "../components/CreateGroupModal";
 import type { Room } from "../types/room.type";
 import type { User } from "../types/user.type";
+import { useAuth } from "../hooks/useAuth";
+import { useRoomChat } from "../hooks/useRoomChat";
 
 function Rooms() {
   const navigate = useNavigate();
+  const { user: currentUser } = useAuth();
+
+  const { selectedRoom, messages, messagesLoading, selectRoom, sendMessage } =
+    useRoomChat();
 
   const [groupModalOpen, setGroupModalOpen] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]);
-  const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [loading, setLoading] = useState(true);
   const [keyword, setKeyword] = useState("");
+  const [messageText, setMessageText] = useState("");
 
   const filteredRooms = useMemo(() => {
     const q = keyword.trim().toLowerCase();
@@ -31,7 +37,10 @@ function Rooms() {
       const data = await getMyRoomsApi();
 
       setRooms(data);
-      setSelectedRoom(data.length > 0 ? data[0] : null);
+
+      if (data.length > 0) {
+        await selectRoom(data[0]);
+      }
     } catch (error) {
       console.error(error);
       alert("Không tải được danh sách phòng.");
@@ -64,8 +73,27 @@ function Rooms() {
     await loadRooms();
   };
 
+  const handleSendMessage = async (event: React.FormEvent) => {
+    event.preventDefault();
+
+    const content = messageText.trim();
+    if (!content) return;
+
+    try {
+      setMessageText("");
+      await sendMessage(content);
+    } catch (error) {
+      console.error(error);
+      alert("Gửi tin nhắn nhóm thất bại");
+    }
+  };
+
   const getAvatarText = (name?: string) => {
     return name?.trim().charAt(0).toUpperCase() || "?";
+  };
+
+  const getMemberCount = (room: Room) => {
+    return room.members?.length ?? 0;
   };
 
   return (
@@ -76,8 +104,9 @@ function Rooms() {
         onClose={() => setGroupModalOpen(false)}
         onCreate={handleCreateGroup}
       />
+
       <main className="h-full bg-slate-950 text-white">
-        <Group orientation="horizontal" autoSave="rooms-layout-v1">
+        <Group orientation="horizontal" autoSave="rooms-layout-v2">
           <Panel defaultSize="250px" className="bg-slate-900">
             <aside className="flex h-full flex-col border-r border-slate-800">
               <div className="p-4">
@@ -120,7 +149,7 @@ function Rooms() {
                     return (
                       <button
                         key={room.id}
-                        onClick={() => setSelectedRoom(room)}
+                        onClick={() => selectRoom(room)}
                         className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition-colors ${
                           active ? "bg-slate-800" : "hover:bg-slate-800"
                         }`}
@@ -134,7 +163,7 @@ function Rooms() {
                             {room.name}
                           </p>
                           <p className="truncate text-sm text-slate-400">
-                            {room.memberIds.length} thành viên
+                            {getMemberCount(room)} thành viên
                           </p>
                         </div>
                       </button>
@@ -162,7 +191,7 @@ function Rooms() {
                           {selectedRoom.name}
                         </h2>
                         <p className="truncate text-sm text-slate-400">
-                          {selectedRoom.memberIds.length} thành viên
+                          {getMemberCount(selectedRoom)} thành viên
                         </p>
                       </div>
                     </div>
@@ -182,32 +211,78 @@ function Rooms() {
                     </div>
                   </header>
 
-                  <div className="flex flex-1 flex-col items-center justify-center px-8 text-center">
-                    <div className="flex h-24 w-24 items-center justify-center rounded-full bg-slate-800 text-3xl font-bold">
-                      {getAvatarText(selectedRoom.name)}
-                    </div>
+                  <div className="min-h-0 flex-1 overflow-auto px-6 py-5">
+                    {messagesLoading ? (
+                      <div className="flex h-full items-center justify-center text-slate-500">
+                        Đang tải tin nhắn...
+                      </div>
+                    ) : messages.length === 0 ? (
+                      <div className="flex h-full items-center justify-center text-slate-500">
+                        Chưa có tin nhắn nhóm. Hãy gửi tin nhắn đầu tiên.
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {messages.map((message) => {
+                          const mine = message.senderId === currentUser?.id;
 
-                    <h2 className="mt-6 text-2xl font-bold">
-                      {selectedRoom.name}
-                    </h2>
+                          return (
+                            <div
+                              key={message.id}
+                              className={`flex ${
+                                mine ? "justify-end" : "justify-start"
+                              }`}
+                            >
+                              <div
+                                className={`max-w-[70%] rounded-2xl px-4 py-3 text-sm ${
+                                  mine
+                                    ? "bg-blue-600 text-white"
+                                    : "bg-slate-800 text-slate-100"
+                                }`}
+                              >
+                                <p>{message.content}</p>
 
-                    <p className="mt-2 text-slate-400">
-                      Phòng họp này có {selectedRoom.memberIds.length} thành
-                      viên.
-                    </p>
+                                <p
+                                  className={`mt-1 text-[11px] ${
+                                    mine ? "text-blue-100" : "text-slate-400"
+                                  }`}
+                                >
+                                  {new Date(
+                                    message.createdAt,
+                                  ).toLocaleTimeString("vi-VN", {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })}
+                                </p>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  <form
+                    onSubmit={handleSendMessage}
+                    className="flex shrink-0 items-center gap-3 border-t border-slate-800 px-4 py-4"
+                  >
+                    <input
+                      value={messageText}
+                      onChange={(event) => setMessageText(event.target.value)}
+                      placeholder={`Nhắn tin vào ${selectedRoom.name}...`}
+                      className="flex-1 rounded-full bg-slate-800 px-5 py-3 text-white outline-none placeholder:text-slate-500"
+                    />
 
                     <button
-                      onClick={() => navigate(`/call/${selectedRoom.id}`)}
-                      className="mt-8 flex items-center gap-2 rounded-xl bg-blue-600 px-6 py-3 font-semibold hover:bg-blue-700"
+                      type="submit"
+                      className="flex h-11 w-11 items-center justify-center rounded-full bg-blue-600 hover:bg-blue-700"
                     >
-                      <Video size={18} />
-                      Tham gia phòng
+                      <Send size={20} />
                     </button>
-                  </div>
+                  </form>
                 </>
               ) : (
                 <div className="flex flex-1 items-center justify-center text-slate-500">
-                  Chọn phòng họp để xem chi tiết
+                  Chọn phòng họp để bắt đầu chat nhóm
                 </div>
               )}
             </section>
@@ -229,14 +304,14 @@ function Rooms() {
                     </h2>
 
                     <p className="mt-1 text-center text-sm text-slate-400">
-                      {selectedRoom.memberIds.length} thành viên
+                      {getMemberCount(selectedRoom)} thành viên
                     </p>
                   </div>
 
                   <div className="mt-8 space-y-4 font-semibold text-slate-200">
                     <button className="flex w-full justify-between hover:text-white">
                       Thành viên
-                      <span>{selectedRoom.memberIds.length}</span>
+                      <span>{getMemberCount(selectedRoom)}</span>
                     </button>
 
                     <button className="flex w-full justify-between hover:text-white">
@@ -258,7 +333,7 @@ function Rooms() {
                     onClick={() => navigate(`/call/${selectedRoom.id}`)}
                     className="mt-8 w-full rounded-xl bg-blue-600 py-3 font-semibold hover:bg-blue-700"
                   >
-                    Tham gia phòng
+                    Tham gia cuộc gọi
                   </button>
                 </>
               ) : (

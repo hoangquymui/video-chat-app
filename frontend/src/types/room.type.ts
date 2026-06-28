@@ -1,11 +1,19 @@
 import type { User } from "./user.type";
 
+export type RoomMember = {
+  id: number;
+  roomId: number;
+  userId: number;
+  role: "owner" | "member" | string;
+  joinedAt: string;
+};
+
 export type Room = {
   id: number;
   name: string;
   createdBy: number;
-  memberIds: number[];
   createdAt: string;
+  members: RoomMember[];
 };
 
 export type CreateRoomData = {
@@ -14,5 +22,5 @@ export type CreateRoomData = {
 };
 
 export type RoomWithMembers = Room & {
-  members?: User[];
+  memberUsers?: User[];
 };

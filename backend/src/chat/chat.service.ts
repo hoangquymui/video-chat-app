@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Conversation } from './entity/conversation.entity';
 import { Message } from './entity/message.entity';
+import { RoomMessage } from 'src/rooms/entity/room-message.entity';
 
 @Injectable()
 export class ChatService {
@@ -12,6 +13,9 @@ export class ChatService {
 
     @InjectRepository(Message)
     private readonly messageRepository: Repository<Message>,
+
+    @InjectRepository(RoomMessage)
+    private readonly roomMessageRepository: Repository<RoomMessage>,
   ) {}
 
   async findOrCreateDirectConversation(
@@ -92,5 +96,22 @@ export class ChatService {
     });
 
     return this.messageRepository.save(message);
+  }
+
+  findRoomMessages(roomId: number) {
+    return this.roomMessageRepository.find({
+      where: { roomId },
+      order: { createdAt: 'ASC' },
+    });
+  }
+
+  createRoomMessage(roomId: number, senderId: number, content: string) {
+    const message = this.roomMessageRepository.create({
+      roomId,
+      senderId,
+      content,
+    });
+
+    return this.roomMessageRepository.save(message);
   }
 }

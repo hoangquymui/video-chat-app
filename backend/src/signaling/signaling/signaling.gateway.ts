@@ -161,4 +161,31 @@ export class SignalingGateway
       .to(`conversation-${data.conversationId}`)
       .emit('new-message', data.message);
   }
+
+  @SubscribeMessage('join-room-chat')
+  handleJoinRoomChat(
+    @MessageBody() data: { roomId: number },
+    @ConnectedSocket() client: Socket,
+  ) {
+    client.join(`room-chat-${data.roomId}`);
+  }
+
+  @SubscribeMessage('send-room-message')
+  handleSendRoomMessage(
+    @MessageBody()
+    data: {
+      roomId: number;
+      message: {
+        id: number;
+        roomId: number;
+        senderId: number;
+        content: string;
+        createdAt: string;
+      };
+    },
+  ) {
+    this.server
+      .to(`room-chat-${data.roomId}`)
+      .emit('new-room-message', data.message);
+  }
 }

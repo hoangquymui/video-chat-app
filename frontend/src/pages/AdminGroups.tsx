@@ -28,7 +28,6 @@ function AdminGroups() {
       setUsers(data);
     } catch (error) {
       console.error(error);
-      alert("Không tải được danh sách user");
     }
   };
 
@@ -39,7 +38,6 @@ function AdminGroups() {
       setRooms(data);
     } catch (error) {
       console.error(error);
-      alert("Không tải được danh sách nhóm");
     } finally {
       setLoading(false);
     }
@@ -187,7 +185,7 @@ function AdminGroups() {
 
                       <td className="px-5 py-4">{room.createdBy}</td>
 
-                      <td className="px-5 py-4">{room.memberIds.length}</td>
+                      <td className="px-5 py-4">{room.members?.length ?? 0}</td>
 
                       <td className="px-5 py-4">
                         {new Date(room.createdAt).toLocaleString("vi-VN")}

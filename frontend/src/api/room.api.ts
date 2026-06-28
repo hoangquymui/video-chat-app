@@ -20,3 +20,13 @@ export const deleteRoomApi = async (id: number) => {
   const response = await api.delete(`/rooms/${id}`);
   return response.data;
 };
+
+export const addRoomMemberApi = async (roomId: number, userId: number) => {
+  const response = await api.post<Room>(`/rooms/${roomId}/members/${userId}`);
+  return response.data;
+};
+
+export const removeRoomMemberApi = async (roomId: number, userId: number) => {
+  const response = await api.delete<Room>(`/rooms/${roomId}/members/${userId}`);
+  return response.data;
+};
