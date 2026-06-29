@@ -29,7 +29,11 @@ function VideoGrid({
         : "grid-cols-1 md:grid-cols-2 xl:grid-cols-3";
 
   return (
-    <section className={`mx-auto grid max-w-7xl gap-6 ${gridClass}`}>
+    <section
+      className={`mx-auto grid w-full gap-6 ${
+        totalVideos === 1 ? "max-w-2xl grid-cols-1" : `max-w-7xl ${gridClass}`
+      }`}
+    >
       <VideoCard title={localTitle} videoRef={localVideoRef} />
 
       {remoteStreams.map((remote) => (

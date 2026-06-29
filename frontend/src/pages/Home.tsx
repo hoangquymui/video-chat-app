@@ -28,6 +28,8 @@ function Home() {
   const [messageText, setMessageText] = useState("");
   const [groupModalOpen, setGroupModalOpen] = useState(false);
 
+  const [showInfo, setShowInfo] = useState(false);
+
   const filteredUsers = useMemo(() => {
     const q = keyword.trim().toLowerCase();
 
@@ -100,7 +102,7 @@ function Home() {
     <>
       <main className="h-full bg-slate-950 text-white">
         <Group orientation="horizontal" autoSave="home-chat-layout-v2">
-          <Panel defaultSize="200px" className="bg-slate-900">
+          <Panel defaultSize="200px" maxSize="200px" className="bg-slate-900">
             <aside className="flex h-full flex-col border-r border-slate-800">
               <div className="p-4">
                 <div className="flex items-center justify-between">
@@ -200,7 +202,14 @@ function Home() {
                         <Video size={22} />
                       </button>
 
-                      <button className="rounded-full p-2 hover:bg-slate-800">
+                      <button
+                        onClick={() => setShowInfo((prev) => !prev)}
+                        className={`rounded-full p-2 transition ${
+                          showInfo
+                            ? "bg-blue-600 text-white"
+                            : "hover:bg-slate-800 text-blue-500"
+                        }`}
+                      >
                         <Info size={22} />
                       </button>
                     </div>
@@ -287,47 +296,56 @@ function Home() {
 
           <Separator className="hidden w-[3px] cursor-col-resize bg-slate-900 transition-colors hover:bg-blue-600 xl:block" />
 
-          <Panel defaultSize="200px" className="hidden bg-slate-900 xl:block">
-            <aside className="h-full border-l border-slate-800 p-6">
-              {selectedUser ? (
-                <>
-                  <div className="flex flex-col items-center">
-                    <div className="flex h-24 w-24 items-center justify-center rounded-full bg-slate-700 text-3xl font-bold text-white">
-                      {getAvatarText(selectedUser.name)}
+          {showInfo && (
+            <>
+              <Panel
+                defaultSize="300px"
+                className="hidden bg-slate-900 xl:block"
+              >
+                <aside className="h-full border-l border-slate-800 p-6">
+                  {selectedUser ? (
+                    <>
+                      <div className="flex flex-col items-center">
+                        <div className="flex h-24 w-24 items-center justify-center rounded-full bg-slate-700 text-3xl font-bold text-white">
+                          {getAvatarText(selectedUser.name)}
+                        </div>
+
+                        <h2 className="mt-4 text-center text-lg font-bold text-white">
+                          {selectedUser.name}
+                        </h2>
+
+                        <p className="mt-1 text-center text-sm text-slate-400">
+                          {selectedUser.email}
+                        </p>
+
+                        <button className="mt-6 flex h-10 w-10 items-center justify-center rounded-full bg-slate-800 hover:bg-slate-700">
+                          <Search size={20} />
+                        </button>
+
+                        <p className="mt-2 text-sm text-slate-300">Tìm kiếm</p>
+                      </div>
+
+                      <div className="mt-8 space-y-4 font-semibold text-slate-200">
+                        <button className="flex w-full justify-between hover:text-white">
+                          File phương tiện và file
+                          <span>⌄</span>
+                        </button>
+
+                        <button className="flex w-full justify-between hover:text-white">
+                          Quyền riêng tư và hỗ trợ
+                          <span>⌄</span>
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-center text-slate-400">
+                      Chưa chọn user
                     </div>
-
-                    <h2 className="mt-4 text-center text-lg font-bold text-white">
-                      {selectedUser.name}
-                    </h2>
-
-                    <p className="mt-1 text-center text-sm text-slate-400">
-                      {selectedUser.email}
-                    </p>
-
-                    <button className="mt-6 flex h-10 w-10 items-center justify-center rounded-full bg-slate-800 hover:bg-slate-700">
-                      <Search size={20} />
-                    </button>
-
-                    <p className="mt-2 text-sm text-slate-300">Tìm kiếm</p>
-                  </div>
-
-                  <div className="mt-8 space-y-4 font-semibold text-slate-200">
-                    <button className="flex w-full justify-between hover:text-white">
-                      File phương tiện và file
-                      <span>⌄</span>
-                    </button>
-
-                    <button className="flex w-full justify-between hover:text-white">
-                      Quyền riêng tư và hỗ trợ
-                      <span>⌄</span>
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <div className="text-center text-slate-400">Chưa chọn user</div>
-              )}
-            </aside>
-          </Panel>
+                  )}
+                </aside>
+              </Panel>
+            </>
+          )}
         </Group>
       </main>
 
