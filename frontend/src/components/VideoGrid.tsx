@@ -1,6 +1,6 @@
+import { useState, type RefObject } from "react";
 import RemoteVideoCard from "./RemoteVideoCard";
 import VideoCard from "./VideoCard";
-import type { RefObject } from "react";
 
 type RemoteStream = {
   peerId: string;
@@ -14,35 +14,69 @@ type VideoGridProps = {
   remoteStreams: RemoteStream[];
 };
 
+type PinnedVideo =
+  | { type: "local"; id: "local" }
+  | { type: "remote"; id: string };
+
 function VideoGrid({
   localTitle,
   localVideoRef,
   remoteStreams,
 }: VideoGridProps) {
-  const totalVideos = remoteStreams.length + 1;
+  const [pinnedVideo, setPinnedVideo] = useState<PinnedVideo>({
+    type: "local",
+    id: "local",
+  });
 
-  const gridClass =
-    totalVideos <= 1
-      ? "grid-cols-1"
-      : totalVideos <= 4
-        ? "grid-cols-1 md:grid-cols-2"
-        : "grid-cols-1 md:grid-cols-2 xl:grid-cols-3";
+  const pinnedRemote = remoteStreams.find(
+    (remote) =>
+      pinnedVideo.type === "remote" && remote.peerId === pinnedVideo.id,
+  );
+
+  const isPinnedLocal = pinnedVideo.type === "local";
 
   return (
-    <section
-      className={`mx-auto grid w-full gap-6 ${
-        totalVideos === 1 ? "max-w-2xl grid-cols-1" : `max-w-7xl ${gridClass}`
-      }`}
-    >
-      <VideoCard title={localTitle} videoRef={localVideoRef} />
-
-      {remoteStreams.map((remote) => (
-        <RemoteVideoCard
-          key={remote.peerId}
-          title={remote.name}
-          stream={remote.stream}
+    <section className="mx-auto flex h-[calc(100vh-210px)] max-w-7xl flex-col gap-5">
+      <div className="no-scrollbar flex shrink-0 gap-4 overflow-x-auto pb-1">
+        <VideoCard
+          title={localTitle}
+          videoRef={localVideoRef}
+          small
+          active={isPinnedLocal}
+          onClick={() => setPinnedVideo({ type: "local", id: "local" })}
         />
-      ))}
+
+        {remoteStreams.map((remote) => (
+          <RemoteVideoCard
+            key={remote.peerId}
+            title={remote.name}
+            stream={remote.stream}
+            small
+            active={
+              pinnedVideo.type === "remote" && pinnedVideo.id === remote.peerId
+            }
+            onClick={() =>
+              setPinnedVideo({
+                type: "remote",
+                id: remote.peerId,
+              })
+            }
+          />
+        ))}
+      </div>
+
+      <div className="flex min-h-0 flex-1 items-center justify-center">
+        <div className="w-full max-w-5xl">
+          {isPinnedLocal || !pinnedRemote ? (
+            <VideoCard title={localTitle} videoRef={localVideoRef} />
+          ) : (
+            <RemoteVideoCard
+              title={pinnedRemote.name}
+              stream={pinnedRemote.stream}
+            />
+          )}
+        </div>
+      </div>
     </section>
   );
 }
