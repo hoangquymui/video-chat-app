@@ -75,4 +75,22 @@ export class ChatController {
       body.content,
     );
   }
+
+  @Get('meetings/:meetingCode/messages')
+  findMeetingMessages(@Param('meetingCode') meetingCode: string) {
+    return this.chatService.findMeetingMessages(meetingCode);
+  }
+
+  @Post('meetings/:meetingCode/messages')
+  createMeetingMessage(
+    @Param('meetingCode') meetingCode: string,
+    @Body() body: CreateMessageDto,
+    @Req() req: AuthRequest,
+  ) {
+    return this.chatService.createMeetingMessage(
+      meetingCode,
+      req.user.id,
+      body.content,
+    );
+  }
 }

@@ -91,6 +91,7 @@ export class ChatService {
 
     const message = this.messageRepository.create({
       conversationId,
+      meetingCode: null,
       senderId,
       content,
     });
@@ -113,5 +114,31 @@ export class ChatService {
     });
 
     return this.roomMessageRepository.save(message);
+  }
+
+  findMeetingMessages(meetingCode: string): Promise<Message[]> {
+    return this.messageRepository.find({
+      where: {
+        meetingCode,
+      },
+      order: {
+        createdAt: 'ASC',
+      },
+    });
+  }
+
+  createMeetingMessage(
+    meetingCode: string,
+    senderId: number,
+    content: string,
+  ): Promise<Message> {
+    const message = this.messageRepository.create({
+      conversationId: null,
+      meetingCode,
+      senderId,
+      content,
+    });
+
+    return this.messageRepository.save(message);
   }
 }

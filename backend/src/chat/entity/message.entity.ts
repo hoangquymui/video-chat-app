@@ -10,10 +10,22 @@ export class Message {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
-  conversationId: number;
+  @Column({
+    type: 'int',
+    nullable: true,
+  })
+  conversationId: number | null;
 
-  @Column()
+  @Column({
+    type: 'varchar',
+    length: 30,
+    nullable: true,
+  })
+  meetingCode: string | null;
+
+  @Column({
+    type: 'int',
+  })
   senderId: number;
 
   @Column('text')

@@ -3,12 +3,16 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateMeetingDto } from './dto/create-meeting.dto';
 import { Meeting } from './entity/meeting.entity';
+import { Message } from 'src/chat/entity/message.entity';
 
 @Injectable()
 export class MeetingsService {
   constructor(
     @InjectRepository(Meeting)
     private readonly meetingsRepository: Repository<Meeting>,
+
+    @InjectRepository(Message)
+    private readonly messageRepository: Repository<Message>,
   ) {}
 
   async create(
@@ -69,6 +73,10 @@ export class MeetingsService {
 
     meeting.status = 'ended';
     meeting.endedAt = new Date();
+
+    await this.messageRepository.delete({
+      meetingCode: meeting.meetingCode,
+    });
 
     return this.meetingsRepository.save(meeting);
   }

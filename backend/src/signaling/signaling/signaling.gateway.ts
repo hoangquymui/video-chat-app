@@ -253,4 +253,31 @@ export class SignalingGateway
       .to(`room-chat-${data.meetingCode}`)
       .emit('new-room-message', data.message);
   }
+
+  @SubscribeMessage('join-meeting-chat')
+  handleJoinMeetingChat(
+    @MessageBody() data: { meetingCode: string },
+    @ConnectedSocket() client: Socket,
+  ) {
+    client.join(`meeting-chat-${data.meetingCode}`);
+  }
+
+  @SubscribeMessage('send-meeting-message')
+  handleSendMeetingMessage(
+    @MessageBody()
+    data: {
+      meetingCode: string;
+      message: {
+        id: number;
+        meetingCode: string | null;
+        senderId: number;
+        content: string;
+        createdAt: string;
+      };
+    },
+  ) {
+    this.server
+      .to(`meeting-chat-${data.meetingCode}`)
+      .emit('new-meeting-message', data.message);
+  }
 }
