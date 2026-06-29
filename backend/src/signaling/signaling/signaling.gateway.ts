@@ -15,7 +15,7 @@ type SocketUser = {
 };
 
 type SignalPayload = {
-  roomId: string;
+  meetingCode: string;
   to?: string;
   offer?: RTCSessionDescriptionInit;
   answer?: RTCSessionDescriptionInit;
@@ -47,45 +47,45 @@ export class SignalingGateway
   }
 
   handleDisconnect(client: Socket) {
-    const roomId = client.data.roomId as string | undefined;
+    const meetingCode = client.data.meetingCode as string | undefined;
 
-    if (!roomId) return;
+    if (!meetingCode) return;
 
-    const users = this.callUsers.get(roomId);
+    const users = this.callUsers.get(meetingCode);
 
     if (users) {
       users.delete(client.id);
 
-      this.server.to(roomId).emit('room-users', {
+      this.server.to(meetingCode).emit('room-users', {
         users: Array.from(users.values()),
       });
 
       if (users.size === 0) {
-        this.callUsers.delete(roomId);
+        this.callUsers.delete(meetingCode);
       }
     }
   }
 
   @SubscribeMessage('join-room-preview')
   handleJoinRoomPreview(
-    @MessageBody() data: { roomId: string; user: SocketUser },
+    @MessageBody() data: { meetingCode: string; user: SocketUser },
     @ConnectedSocket() client: Socket,
   ) {
-    const { roomId, user } = data;
+    const { meetingCode, user } = data;
 
-    if (!this.previewUsers.has(roomId)) {
-      this.previewUsers.set(roomId, new Map());
+    if (!this.previewUsers.has(meetingCode)) {
+      this.previewUsers.set(meetingCode, new Map());
     }
 
-    this.previewUsers.get(roomId)!.set(client.id, user);
+    this.previewUsers.get(meetingCode)!.set(client.id, user);
 
-    client.data.previewRoomId = roomId;
+    client.data.previewmeetingCode = meetingCode;
     client.data.user = user;
 
-    client.join(`preview-${roomId}`);
+    client.join(`preview-${meetingCode}`);
 
-    this.server.to(`preview-${roomId}`).emit('call-users', {
-      users: Array.from(this.callUsers.get(roomId)?.values() ?? []),
+    this.server.to(`preview-${meetingCode}`).emit('call-users', {
+      users: Array.from(this.callUsers.get(meetingCode)?.values() ?? []),
     });
   }
 
@@ -93,38 +93,38 @@ export class SignalingGateway
   handleJoinRoom(
     @MessageBody()
     data: {
-      roomId: string;
+      meetingCode: string;
       user: SocketUser;
     },
     @ConnectedSocket() client: Socket,
   ) {
-    const { roomId, user } = data;
+    const { meetingCode, user } = data;
 
-    client.join(roomId);
+    client.join(meetingCode);
 
-    if (!this.callUsers.has(roomId)) {
-      this.callUsers.set(roomId, new Map());
+    if (!this.callUsers.has(meetingCode)) {
+      this.callUsers.set(meetingCode, new Map());
     }
 
-    this.callUsers.get(roomId)!.set(client.id, user);
+    this.callUsers.get(meetingCode)!.set(client.id, user);
 
-    client.data.roomId = roomId;
+    client.data.meetingCode = meetingCode;
     client.data.user = user;
 
-    this.server.to(`preview-${roomId}`).emit('call-users', {
-      users: Array.from(this.callUsers.get(roomId)!.values()),
+    this.server.to(`preview-${meetingCode}`).emit('call-users', {
+      users: Array.from(this.callUsers.get(meetingCode)!.values()),
     });
 
-    client.to(roomId).emit('user-joined', {
+    client.to(meetingCode).emit('user-joined', {
       from: client.id,
       user,
     });
 
-    console.log(`Client ${client.id} joined room ${roomId}`);
+    console.log(`Client ${client.id} joined room ${meetingCode}`);
 
     return {
       socketId: client.id,
-      roomId,
+      meetingCode,
       user,
     };
   }
@@ -165,19 +165,19 @@ export class SignalingGateway
 
   @SubscribeMessage('leave-room')
   handleLeaveRoom(
-    @MessageBody() data: { roomId: string },
+    @MessageBody() data: { meetingCode: string },
     @ConnectedSocket() client: Socket,
   ) {
-    const { roomId } = data;
+    const { meetingCode } = data;
 
-    const users = this.callUsers.get(roomId);
+    const users = this.callUsers.get(meetingCode);
 
     if (users) {
       users.delete(client.id);
 
       const currentUsers = Array.from(users.values());
 
-      this.server.to(`preview-${roomId}`).emit('call-users', {
+      this.server.to(`preview-${meetingCode}`).emit('call-users', {
         users: currentUsers,
       });
 
@@ -186,18 +186,18 @@ export class SignalingGateway
       });
 
       if (users.size === 0) {
-        this.callUsers.delete(roomId);
+        this.callUsers.delete(meetingCode);
       }
     }
 
-    client.to(roomId).emit('user-left', {
+    client.to(meetingCode).emit('user-left', {
       from: client.id,
     });
 
-    client.leave(roomId);
-    client.data.roomId = null;
+    client.leave(meetingCode);
+    client.data.meetingCode = null;
 
-    console.log(`Client ${client.id} left room ${roomId}`);
+    console.log(`Client ${client.id} left room ${meetingCode}`);
   }
 
   @SubscribeMessage('join-conversation')
@@ -229,20 +229,20 @@ export class SignalingGateway
 
   @SubscribeMessage('join-room-chat')
   handleJoinRoomChat(
-    @MessageBody() data: { roomId: number },
+    @MessageBody() data: { meetingCode: number },
     @ConnectedSocket() client: Socket,
   ) {
-    client.join(`room-chat-${data.roomId}`);
+    client.join(`room-chat-${data.meetingCode}`);
   }
 
   @SubscribeMessage('send-room-message')
   handleSendRoomMessage(
     @MessageBody()
     data: {
-      roomId: number;
+      meetingCode: number;
       message: {
         id: number;
-        roomId: number;
+        meetingCode: number;
         senderId: number;
         content: string;
         createdAt: string;
@@ -250,7 +250,7 @@ export class SignalingGateway
     },
   ) {
     this.server
-      .to(`room-chat-${data.roomId}`)
+      .to(`room-chat-${data.meetingCode}`)
       .emit('new-room-message', data.message);
   }
 }

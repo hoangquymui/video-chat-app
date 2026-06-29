@@ -18,20 +18,21 @@ type OnlineUser = {
   name: string;
 };
 
-export function useWebRTC(roomId: string) {
+export function useWebRTC(meetingCode: string) {
   const localVideoRef = useRef<HTMLVideoElement | null>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
 
   const peerConnectionsRef = useRef<Map<string, RTCPeerConnection>>(new Map());
   const remoteUsersRef = useRef<Map<string, RemoteUser>>(new Map());
 
+  const { user } = useAuth();
+
   const [joined, setJoined] = useState(false);
   const [cameraEnabled, setCameraEnabled] = useState(true);
   const [micEnabled, setMicEnabled] = useState(true);
+  const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [remoteStreams, setRemoteStreams] = useState<RemoteStream[]>([]);
   const [onlineUsers, setOnlineUsers] = useState<OnlineUser[]>([]);
-  const { user } = useAuth();
-  const [localStream, setLocalStream] = useState<MediaStream | null>(null);
 
   const toggleCamera = () => {
     const videoTrack = localStreamRef.current?.getVideoTracks()[0];
@@ -68,6 +69,7 @@ export function useWebRTC(roomId: string) {
 
       localStreamRef.current?.getTracks().forEach((track) => track.stop());
       localStreamRef.current = null;
+      setLocalStream(null);
 
       const stream = await navigator.mediaDevices.getUserMedia({
         video: true,
@@ -147,13 +149,13 @@ export function useWebRTC(roomId: string) {
     });
 
     peer.onicecandidate = (event) => {
-      if (event.candidate) {
-        socket.emit("candidate", {
-          roomId,
-          to: remotePeerId,
-          candidate: event.candidate.toJSON(),
-        });
-      }
+      if (!event.candidate) return;
+
+      socket.emit("candidate", {
+        meetingCode,
+        to: remotePeerId,
+        candidate: event.candidate.toJSON(),
+      });
     };
 
     peer.ontrack = (event) => {
@@ -201,8 +203,11 @@ export function useWebRTC(roomId: string) {
     return peer;
   };
 
-  const handleUserJoined = async (remotePeerId: string, user: RemoteUser) => {
-    remoteUsersRef.current.set(remotePeerId, user);
+  const handleUserJoined = async (
+    remotePeerId: string,
+    remoteUser: RemoteUser,
+  ) => {
+    remoteUsersRef.current.set(remotePeerId, remoteUser);
 
     const peer = createPeerConnection(remotePeerId);
 
@@ -210,7 +215,7 @@ export function useWebRTC(roomId: string) {
     await peer.setLocalDescription(offer);
 
     socket.emit("offer", {
-      roomId,
+      meetingCode,
       to: remotePeerId,
       offer,
     });
@@ -219,10 +224,10 @@ export function useWebRTC(roomId: string) {
   const handleOffer = async (
     remotePeerId: string,
     offer: RTCSessionDescriptionInit,
-    user?: RemoteUser,
+    remoteUser?: RemoteUser,
   ) => {
-    if (user) {
-      remoteUsersRef.current.set(remotePeerId, user);
+    if (remoteUser) {
+      remoteUsersRef.current.set(remotePeerId, remoteUser);
     }
 
     const peer = createPeerConnection(remotePeerId);
@@ -233,7 +238,7 @@ export function useWebRTC(roomId: string) {
     await peer.setLocalDescription(answer);
 
     socket.emit("answer", {
-      roomId,
+      meetingCode,
       to: remotePeerId,
       answer,
     });
@@ -263,7 +268,18 @@ export function useWebRTC(roomId: string) {
     }
   };
 
+  const unregisterSocketEvents = () => {
+    socket.off("user-joined");
+    socket.off("offer");
+    socket.off("answer");
+    socket.off("candidate");
+    socket.off("user-left");
+    socket.off("call-users");
+  };
+
   const registerSocketEvents = () => {
+    unregisterSocketEvents();
+
     socket.on(
       "user-joined",
       async ({ from, user }: { from: string; user: RemoteUser }) => {
@@ -319,37 +335,27 @@ export function useWebRTC(roomId: string) {
     socket.on("user-left", ({ from }: { from: string }) => {
       removePeer(from);
     });
-
-    socket.on("room-users", ({ users }: { users: OnlineUser[] }) => {
-      setOnlineUsers(users);
-    });
-  };
-
-  const unregisterSocketEvents = () => {
-    socket.off("user-joined");
-    socket.off("offer");
-    socket.off("answer");
-    socket.off("candidate");
-    socket.off("user-left");
-    socket.off("room-users");
-    socket.off("call-users");
   };
 
   const joinRoom = async () => {
+    if (!user) {
+      alert("Không tìm thấy thông tin người dùng.");
+      return;
+    }
+
     await startLocalCamera();
 
     if (!socket.connected) {
       socket.connect();
     }
 
-    unregisterSocketEvents();
     registerSocketEvents();
 
     socket.emit("join-room", {
-      roomId,
+      meetingCode,
       user: {
-        id: user?.id,
-        name: user?.name,
+        id: user.id,
+        name: user.name,
       },
     });
 
@@ -358,7 +364,7 @@ export function useWebRTC(roomId: string) {
 
   const leaveRoom = () => {
     socket.emit("leave-room", {
-      roomId,
+      meetingCode,
     });
 
     peerConnectionsRef.current.forEach((peer) => {
@@ -377,8 +383,8 @@ export function useWebRTC(roomId: string) {
     }
 
     localStreamRef.current = null;
-    setLocalStream(null);
 
+    setLocalStream(null);
     setRemoteStreams([]);
     setJoined(false);
     setCameraEnabled(true);
@@ -386,7 +392,7 @@ export function useWebRTC(roomId: string) {
   };
 
   useEffect(() => {
-    if (!user || !roomId) return;
+    if (!user || !meetingCode) return;
 
     if (!socket.connected) {
       socket.connect();
@@ -395,7 +401,7 @@ export function useWebRTC(roomId: string) {
     registerSocketEvents();
 
     socket.emit("join-room-preview", {
-      roomId,
+      meetingCode,
       user: {
         id: user.id,
         name: user.name,
@@ -405,16 +411,16 @@ export function useWebRTC(roomId: string) {
     return () => {
       unregisterSocketEvents();
     };
-  }, [roomId, user]);
+  }, [meetingCode, user]);
 
   return {
     localVideoRef,
+    localStream,
     remoteStreams,
     joined,
     cameraEnabled,
     micEnabled,
     onlineUsers,
-    localStream,
     joinRoom,
     leaveRoom,
     toggleCamera,
