@@ -12,8 +12,6 @@ function Header() {
       >
         <ArrowLeft size={22} />
       </button>
-
-      <h1 className="text-3xl font-bold text-white">Video Call App</h1>
     </header>
   );
 }

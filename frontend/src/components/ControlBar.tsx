@@ -1,3 +1,5 @@
+import { Mic, MicOff, Video, VideoOff, PhoneOff } from "lucide-react";
+
 type ControlBarProps = {
   joined: boolean;
   cameraEnabled: boolean;
@@ -18,30 +20,32 @@ function ControlBar({
   onToggleMic,
 }: ControlBarProps) {
   return (
-    <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2">
-      <div className="flex items-center gap-4 rounded-2xl bg-slate-800/90 px-6 py-4 shadow-2xl backdrop-blur">
+    <div className="fixed bottom-5 left-1/2 z-50 -translate-x-1/2">
+      <div className="flex items-center gap-3 rounded-full bg-slate-900/95 px-4 py-3 shadow-2xl backdrop-blur">
         {joined && (
           <>
             <button
               onClick={onToggleMic}
-              className={`rounded-full px-5 py-3 font-semibold text-white ${
+              className={`flex h-11 w-11 items-center justify-center rounded-full transition ${
                 micEnabled
-                  ? "bg-slate-600 hover:bg-slate-700"
+                  ? "bg-slate-700 hover:bg-slate-600"
                   : "bg-red-600 hover:bg-red-700"
               }`}
+              title={micEnabled ? "Tắt micro" : "Bật micro"}
             >
-              {micEnabled ? "Tắt mic" : "Bật mic"}
+              {micEnabled ? <Mic size={20} /> : <MicOff size={20} />}
             </button>
 
             <button
               onClick={onToggleCamera}
-              className={`rounded-full px-5 py-3 font-semibold text-white ${
+              className={`flex h-11 w-11 items-center justify-center rounded-full transition ${
                 cameraEnabled
-                  ? "bg-slate-600 hover:bg-slate-700"
+                  ? "bg-slate-700 hover:bg-slate-600"
                   : "bg-red-600 hover:bg-red-700"
               }`}
+              title={cameraEnabled ? "Tắt camera" : "Bật camera"}
             >
-              {cameraEnabled ? "Tắt camera" : "Bật camera"}
+              {cameraEnabled ? <Video size={20} /> : <VideoOff size={20} />}
             </button>
           </>
         )}
@@ -49,16 +53,17 @@ function ControlBar({
         {!joined ? (
           <button
             onClick={onJoinRoom}
-            className="rounded-full bg-green-600 px-6 py-3 font-semibold text-white hover:bg-green-700"
+            className="rounded-full bg-green-600 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-green-700"
           >
             Tham gia
           </button>
         ) : (
           <button
             onClick={onLeaveRoom}
-            className="rounded-full bg-red-600 px-6 py-3 font-semibold text-white hover:bg-red-700"
+            className="flex h-11 w-11 items-center justify-center rounded-full bg-red-600 transition hover:bg-red-700"
+            title="Rời phòng"
           >
-            Rời phòng
+            <PhoneOff size={20} />
           </button>
         )}
       </div>

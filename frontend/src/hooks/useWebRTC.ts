@@ -31,6 +31,7 @@ export function useWebRTC(roomId: string) {
   const [remoteStreams, setRemoteStreams] = useState<RemoteStream[]>([]);
   const [onlineUsers, setOnlineUsers] = useState<OnlineUser[]>([]);
   const { user } = useAuth();
+  const [localStream, setLocalStream] = useState<MediaStream | null>(null);
 
   const toggleCamera = () => {
     const videoTrack = localStreamRef.current?.getVideoTracks()[0];
@@ -82,6 +83,7 @@ export function useWebRTC(roomId: string) {
       }
 
       localStreamRef.current = stream;
+      setLocalStream(stream);
 
       if (localVideoRef.current) {
         localVideoRef.current.srcObject = stream;
@@ -375,6 +377,7 @@ export function useWebRTC(roomId: string) {
     }
 
     localStreamRef.current = null;
+    setLocalStream(null);
 
     setRemoteStreams([]);
     setJoined(false);
@@ -411,6 +414,7 @@ export function useWebRTC(roomId: string) {
     cameraEnabled,
     micEnabled,
     onlineUsers,
+    localStream,
     joinRoom,
     leaveRoom,
     toggleCamera,

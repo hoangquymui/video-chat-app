@@ -1,6 +1,6 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import Header from "../components/Header";
+import { MessageCircle, Send, X } from "lucide-react";
 import ControlBar from "../components/ControlBar";
 import VideoGrid from "../components/VideoGrid";
 import { useWebRTC } from "../hooks/useWebRTC";
@@ -14,7 +14,7 @@ function Meeting() {
   const joinedRef = useRef(false);
 
   const {
-    localVideoRef,
+    localStream,
     remoteStreams,
     onlineUsers,
     joined,
@@ -41,29 +41,31 @@ function Meeting() {
     };
   }, []);
 
+  const handleLeaveRoom = () => {
+    leaveRoom();
+    navigate(`/call/${roomId}`);
+  };
+
   return (
-    <main className="min-h-screen bg-slate-950 px-6 py-8 pb-32">
-      <Header />
+    <main className="relative flex h-full min-h-screen flex-col overflow-hidden bg-slate-950 px-6 py-6 text-white">
+      <div className="mb-4 text-center text-sm text-slate-400">
+        {onlineUsers.length} người đang trong cuộc gọi
+      </div>
 
-      <VideoGrid
-        localTitle={user?.name ?? "Tôi"}
-        localVideoRef={localVideoRef}
-        remoteStreams={remoteStreams}
-      />
-
-      <p className="mt-4 text-center text-slate-400">
-        Số người đang trong cuộc gọi: {onlineUsers.length}
-      </p>
+      <div className="min-h-0 flex-1">
+        <VideoGrid
+          localTitle={user?.name ?? "Tôi"}
+          localStream={localStream}
+          remoteStreams={remoteStreams}
+        />
+      </div>
 
       <ControlBar
         joined={joined}
         cameraEnabled={cameraEnabled}
         micEnabled={micEnabled}
         onJoinRoom={joinRoom}
-        onLeaveRoom={() => {
-          leaveRoom();
-          navigate(`/call/${roomId}`);
-        }}
+        onLeaveRoom={handleLeaveRoom}
         onToggleCamera={toggleCamera}
         onToggleMic={toggleMic}
       />
