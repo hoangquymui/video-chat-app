@@ -1,16 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import ParticipantCard from "./ParticipantCard";
-
-type RemoteStream = {
-  peerId: string;
-  name: string;
-  stream: MediaStream;
-};
+import ControlBar from "./ControlBar";
+import { useWebRTCContext } from "../contexts/WebRTCContext";
 
 type VideoGridProps = {
   localTitle: string;
-  localStream: MediaStream | null;
-  remoteStreams: RemoteStream[];
+  onLeaveRoom: () => void | Promise<void>;
 };
 
 type Participant = {
@@ -20,7 +15,18 @@ type Participant = {
   stream: MediaStream | null;
 };
 
-function VideoGrid({ localTitle, localStream, remoteStreams }: VideoGridProps) {
+function VideoGrid({ localTitle, onLeaveRoom }: VideoGridProps) {
+  const {
+    localStream,
+    remoteStreams,
+    joined,
+    cameraEnabled,
+    micEnabled,
+    joinRoom,
+    toggleCamera,
+    toggleMic,
+  } = useWebRTCContext();
+
   const participants = useMemo<Participant[]>(
     () => [
       {
@@ -42,9 +48,7 @@ function VideoGrid({ localTitle, localStream, remoteStreams }: VideoGridProps) {
   const [pinnedId, setPinnedId] = useState("local");
 
   useEffect(() => {
-    const existed = participants.some((item) => item.id === pinnedId);
-
-    if (!existed) {
+    if (!participants.some((item) => item.id === pinnedId)) {
       setPinnedId("local");
     }
   }, [participants, pinnedId]);
@@ -56,28 +60,52 @@ function VideoGrid({ localTitle, localStream, remoteStreams }: VideoGridProps) {
     (item) => item.id !== pinnedParticipant.id,
   );
 
-  return (
-    <section className="flex h-full min-h-0 flex-col gap-3">
-      <div className="no-scrollbar flex max-h-24 shrink-0 flex-wrap justify-center gap-3 overflow-y-auto px-3">
-        {otherParticipants.map((participant) => (
-          <ParticipantCard
-            key={participant.id}
-            title={participant.title}
-            stream={participant.stream}
-            muted={participant.isLocal}
-            small
-            onClick={() => setPinnedId(participant.id)}
-          />
-        ))}
-      </div>
+  const handleJoinRoom = () => {
+    void joinRoom();
+  };
 
-      <div className="flex min-h-0 flex-1 items-center justify-center px-3 pb-16">
-        <div className="w-full max-w-4xl">
+  return (
+    <section className="flex h-full min-h-0 flex-col gap-2">
+      {otherParticipants.length > 0 && (
+        <div className="shrink-0 rounded-xl border border-slate-800/80 bg-slate-900/60 p-2">
+          <div className="custom-scrollbar flex gap-2 overflow-x-auto overflow-y-hidden pb-1">
+            {otherParticipants.map((participant) => (
+              <div
+                key={participant.id}
+                className="p-1 w-[150px] shrink-0 rounded-xl transition hover:scale-[1.02]"
+              >
+                <ParticipantCard
+                  title={participant.title}
+                  stream={participant.stream}
+                  muted={participant.isLocal}
+                  small
+                  onClick={() => setPinnedId(participant.id)}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="relative flex min-h-0 flex-1 items-stretch justify-center">
+        <div className="pb-15 pr-15 pl-15 pt-5 h-full w-full max-w-6xl overflow-hidden rounded-2xl">
           <ParticipantCard
             title={pinnedParticipant.title}
             stream={pinnedParticipant.stream}
             muted={pinnedParticipant.isLocal}
             active
+          />
+        </div>
+
+        <div className="absolute bottom-1 left-1/2 -translate-x-1/2">
+          <ControlBar
+            joined={joined}
+            cameraEnabled={cameraEnabled}
+            micEnabled={micEnabled}
+            onJoinRoom={handleJoinRoom}
+            onLeaveRoom={onLeaveRoom}
+            onToggleCamera={toggleCamera}
+            onToggleMic={toggleMic}
           />
         </div>
       </div>

@@ -20,7 +20,7 @@ function ControlBar({
   onToggleMic,
 }: ControlBarProps) {
   return (
-    <div className="fixed bottom-5 left-1/2 z-50 -translate-x-1/2">
+    <div className="flex justify-center">
       <div className="flex items-center gap-3 rounded-full bg-slate-900/95 px-4 py-3 shadow-2xl backdrop-blur">
         {joined && (
           <>

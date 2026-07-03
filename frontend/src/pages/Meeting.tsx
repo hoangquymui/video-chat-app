@@ -1,53 +1,30 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { MessageCircle, Send, X } from "lucide-react";
-import Header from "../components/Header";
-import ControlBar from "../components/ControlBar";
 import VideoGrid from "../components/VideoGrid";
-import { useWebRTC } from "../hooks/useWebRTC";
+import { useWebRTCContext } from "../contexts/WebRTCContext";
 import { useAuth } from "../hooks/useAuth";
 import { endMeetingApi, getMeetingByCodeApi } from "../api/meeting.api";
 import type { Meeting } from "../types/meeting.type";
 import { useMeetingChat } from "../hooks/useMeetingChat";
+import { useActiveMeeting } from "../contexts/ActiveMeetingContext";
 
 function Meeting() {
   const { meetingCode } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { setActiveMeeting } = useActiveMeeting();
 
   const [meeting, setMeeting] = useState<Meeting | null>(null);
   const [loading, setLoading] = useState(true);
-
-  const joinedRef = useRef(false);
-
   const [chatOpen, setChatOpen] = useState(false);
   const [messageText, setMessageText] = useState("");
+
+  const { onlineUsers, leaveRoom, startMeetingPreview } = useWebRTCContext();
 
   const { messages, messagesLoading, sendMessage } = useMeetingChat(
     meeting?.meetingCode ?? "",
   );
-
-  const handleSendMessage = async (event: React.FormEvent) => {
-    event.preventDefault();
-
-    const content = messageText.trim();
-    if (!content) return;
-
-    setMessageText("");
-    await sendMessage(content);
-  };
-  const {
-    localStream,
-    remoteStreams,
-    onlineUsers,
-    joined,
-    cameraEnabled,
-    micEnabled,
-    joinRoom,
-    leaveRoom,
-    toggleCamera,
-    toggleMic,
-  } = useWebRTC(meetingCode ? `meeting-${meetingCode}` : "test-meeting");
 
   useEffect(() => {
     const loadMeeting = async () => {
@@ -56,7 +33,15 @@ function Meeting() {
       try {
         setLoading(true);
         const data = await getMeetingByCodeApi(meetingCode);
+
         setMeeting(data);
+        startMeetingPreview(data.meetingCode);
+
+        setActiveMeeting({
+          meetingCode: data.meetingCode,
+          roomId: data.roomId,
+          title: data.meetingCode,
+        });
       } catch (error) {
         console.error(error);
         alert("Không tải được cuộc họp");
@@ -67,29 +52,43 @@ function Meeting() {
     };
 
     loadMeeting();
-  }, [meetingCode, navigate]);
+  }, [meetingCode, navigate, setActiveMeeting, startMeetingPreview]);
 
   useEffect(() => {
-    if (!meeting || joinedRef.current) return;
+    const handleUnload = () => {
+      void leaveRoom();
+    };
 
-    joinedRef.current = true;
-
-    joinRoom().catch((error) => {
-      console.error(error);
-      navigate(`/call/${meeting.roomId}`, { replace: true });
-    });
+    window.addEventListener("beforeunload", handleUnload);
 
     return () => {
-      leaveRoom();
+      window.removeEventListener("beforeunload", handleUnload);
     };
-  }, [meeting]);
+  }, [leaveRoom]);
+
+  const handleSendMessage = async (event: React.FormEvent) => {
+    event.preventDefault();
+
+    const content = messageText.trim();
+    if (!content) return;
+
+    setMessageText("");
+    await sendMessage(content);
+  };
 
   const handleLeaveRoom = async () => {
-    leaveRoom();
+    await leaveRoom();
 
-    if (meeting) {
+    if (!meeting) return;
+
+    try {
       await endMeetingApi(meeting.id);
-      navigate(`/call/${meeting.roomId}`);
+      setActiveMeeting(null);
+    } catch (error) {
+      console.error(error);
+      alert("Kết thúc cuộc gọi thất bại");
+    } finally {
+      navigate("/rooms");
     }
   };
 
@@ -102,102 +101,144 @@ function Meeting() {
   }
 
   return (
-    <>
-      <button
-        onClick={() => setChatOpen(true)}
-        className="fixed bottom-5 right-6 z-50 flex h-11 w-11 items-center justify-center rounded-full bg-slate-800 text-white shadow-2xl hover:bg-slate-700"
+    <main className="relative flex h-screen overflow-hidden bg-slate-950 text-white">
+      <section
+        className={`flex min-w-0 flex-1 flex-col px-3 py-3 transition-all duration-300 ${
+          chatOpen ? "pr-[360px]" : ""
+        }`}
       >
-        <MessageCircle size={20} />
-      </button>
+        <div className="mb-2 flex h-14 items-center justify-between rounded-xl border border-slate-800 bg-slate-900/80 px-4 shadow-lg backdrop-blur">
+          <div className="min-w-0">
+            <h1 className="truncate text-sm font-bold">
+              {meeting?.meetingCode ?? "Meeting"}
+            </h1>
 
-      {chatOpen && (
-        <aside className="fixed right-0 top-0 z-50 flex h-full w-[360px] flex-col border-l border-slate-800 bg-slate-900 text-white shadow-2xl">
-          <header className="flex h-16 items-center justify-between border-b border-slate-800 px-4">
-            <h2 className="font-bold">Chat cuộc họp</h2>
+            <p className="mt-0.5 text-xs text-slate-400">
+              {onlineUsers.length} người đang tham gia
+            </p>
+          </div>
 
-            <button
-              onClick={() => setChatOpen(false)}
-              className="rounded-full p-2 text-slate-400 hover:bg-slate-800 hover:text-white"
-            >
-              <X size={20} />
-            </button>
-          </header>
+          <div className="shrink-0 rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-400">
+            ● Đang họp
+          </div>
+        </div>
 
-          <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto px-4 py-4">
-            {messagesLoading ? (
-              <div className="text-center text-sm text-slate-400">
-                Đang tải tin nhắn...
-              </div>
-            ) : messages.length === 0 ? (
-              <div className="text-center text-sm text-slate-400">
-                Chưa có tin nhắn trong cuộc họp.
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {messages.map((message) => (
+        <div className="min-h-0 flex-1">
+          <VideoGrid
+            localTitle={user?.name ?? "Tôi"}
+            onLeaveRoom={handleLeaveRoom}
+          />
+        </div>
+      </section>
+
+      {!chatOpen && (
+        <button
+          onClick={() => setChatOpen(true)}
+          className="fixed bottom-24 right-6 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-slate-800 text-white shadow-2xl transition hover:scale-105 hover:bg-slate-700"
+        >
+          <MessageCircle size={21} />
+
+          {messages.length > 0 && (
+            <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold">
+              {messages.length > 99 ? "99+" : messages.length}
+            </span>
+          )}
+        </button>
+      )}
+
+      <aside
+        className={`fixed bottom-3 right-3 top-3 z-50 flex w-[332px] flex-col rounded-2xl border border-slate-800 bg-slate-900/95 text-white shadow-2xl backdrop-blur-xl transition-all duration-300 ${
+          chatOpen
+            ? "translate-x-0 opacity-100"
+            : "translate-x-[calc(100%+1rem)] opacity-0"
+        }`}
+      >
+        <header className="flex h-14 items-center justify-between border-b border-slate-800 px-4">
+          <div>
+            <h2 className="text-sm font-bold">Chat cuộc họp</h2>
+            <p className="text-xs text-slate-400">{messages.length} tin nhắn</p>
+          </div>
+
+          <button
+            onClick={() => setChatOpen(false)}
+            className="rounded-full p-2 text-slate-400 transition hover:bg-slate-800 hover:text-white"
+          >
+            <X size={18} />
+          </button>
+        </header>
+
+        <div className="no-scrollbar min-h-0 flex-1 space-y-3 overflow-y-auto px-3 py-4">
+          {messagesLoading ? (
+            <div className="pt-10 text-center text-sm text-slate-500">
+              Đang tải tin nhắn...
+            </div>
+          ) : messages.length === 0 ? (
+            <div className="pt-10 text-center text-sm text-slate-500">
+              Chưa có tin nhắn
+            </div>
+          ) : (
+            messages.map((message) => {
+              const mine = message.senderId === user?.id;
+
+              return (
+                <div
+                  key={message.id}
+                  className={`flex ${mine ? "justify-end" : "justify-start"}`}
+                >
                   <div
-                    key={message.id}
-                    className="rounded-2xl bg-slate-800 px-4 py-3 text-sm"
+                    className={`max-w-[88%] rounded-2xl px-3.5 py-2.5 text-sm shadow ${
+                      mine
+                        ? "bg-blue-600 text-white"
+                        : "border border-slate-700 bg-slate-800 text-slate-100"
+                    }`}
                   >
-                    <p>{message.content}</p>
-                    <p className="mt-1 text-[11px] text-slate-400">
+                    {!mine && (
+                      <p className="mb-1 text-[11px] font-semibold text-slate-300">
+                        Người dùng
+                      </p>
+                    )}
+
+                    <p className="leading-relaxed">{message.content}</p>
+
+                    <p
+                      className={`mt-1.5 text-right text-[10px] ${
+                        mine ? "text-blue-100" : "text-slate-400"
+                      }`}
+                    >
                       {new Date(message.createdAt).toLocaleTimeString("vi-VN", {
                         hour: "2-digit",
                         minute: "2-digit",
                       })}
                     </p>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
+                </div>
+              );
+            })
+          )}
+        </div>
 
-          <form
-            onSubmit={handleSendMessage}
-            className="flex shrink-0 items-center gap-3 border-t border-slate-800 px-4 py-4"
-          >
+        <form
+          onSubmit={handleSendMessage}
+          className="border-t border-slate-800 p-3"
+        >
+          <div className="flex items-center rounded-xl bg-slate-800 px-2 py-2">
             <input
               value={messageText}
               onChange={(event) => setMessageText(event.target.value)}
               placeholder="Nhập tin nhắn..."
-              className="min-w-0 flex-1 rounded-full bg-slate-800 px-4 py-3 text-sm text-white outline-none placeholder:text-slate-500"
+              className="min-w-0 flex-1 bg-transparent px-3 text-sm text-white outline-none placeholder:text-slate-500"
             />
 
             <button
               type="submit"
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 hover:bg-blue-700"
+              className="ml-2 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-600 transition hover:bg-blue-500"
             >
-              <Send size={18} />
+              <Send size={17} />
             </button>
-          </form>
-        </aside>
-      )}
-      <main className="relative flex h-full min-h-screen flex-col overflow-hidden bg-slate-950 px-6 py-6 text-white">
-        <Header />
-
-        <div className="mb-3 text-center text-sm text-slate-400">
-          {onlineUsers.length} người đang trong cuộc gọi
-        </div>
-
-        <div className="min-h-0 flex-1">
-          <VideoGrid
-            localTitle={user?.name ?? "Tôi"}
-            localStream={localStream}
-            remoteStreams={remoteStreams}
-          />
-        </div>
-
-        <ControlBar
-          joined={joined}
-          cameraEnabled={cameraEnabled}
-          micEnabled={micEnabled}
-          onJoinRoom={joinRoom}
-          onLeaveRoom={handleLeaveRoom}
-          onToggleCamera={toggleCamera}
-          onToggleMic={toggleMic}
-        />
-      </main>
-    </>
+          </div>
+        </form>
+      </aside>
+    </main>
   );
 }
 

@@ -29,8 +29,8 @@ function ParticipantCard({
     <button
       type="button"
       onClick={onClick}
-      className={`relative overflow-hidden rounded-2xl bg-black text-left shadow-xl transition ${
-        small ? "h-24 w-36 shrink-0" : "aspect-video w-full"
+      className={`group relative block overflow-hidden bg-black text-left transition ${
+        small ? "aspect-video w-full rounded-xl" : "h-full w-full rounded-2xl"
       } ${
         active ? "ring-2 ring-blue-500" : "hover:ring-2 hover:ring-slate-600"
       }`}
@@ -44,16 +44,24 @@ function ParticipantCard({
       />
 
       {!stream && (
-        <div className="absolute inset-0 flex items-center justify-center bg-slate-900">
-          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-slate-700 text-2xl font-bold text-white">
+        <div className="absolute inset-0 flex items-center justify-center bg-slate-800">
+          <div
+            className={`${small ? "text-3xl" : "text-6xl"} font-bold text-slate-300`}
+          >
             {title.charAt(0).toUpperCase()}
           </div>
         </div>
       )}
 
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
 
-      <span className="absolute bottom-4 left-4 rounded-full bg-black/60 px-3 py-1 text-sm font-semibold text-white backdrop-blur">
+      <span
+        className={`absolute rounded-full bg-black/65 font-semibold text-white backdrop-blur ${
+          small
+            ? "bottom-2 left-2 px-2.5 py-1 text-xs"
+            : "bottom-4 left-4 px-3 py-1.5 text-sm"
+        }`}
+      >
         {title}
       </span>
     </button>

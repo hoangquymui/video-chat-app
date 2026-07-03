@@ -56,14 +56,29 @@ export class SignalingGateway
     if (users) {
       users.delete(client.id);
 
-      this.server.to(meetingCode).emit('room-users', {
-        users: Array.from(users.values()),
+      const currentUsers = Array.from(users.values());
+
+      this.server.to(`preview-${meetingCode}`).emit('call-users', {
+        users: currentUsers,
+      });
+
+      this.server.to(meetingCode).emit('call-users', {
+        users: currentUsers,
       });
 
       if (users.size === 0) {
         this.callUsers.delete(meetingCode);
       }
     }
+
+    client.to(meetingCode).emit('user-left', {
+      from: client.id,
+    });
+
+    client.data.meetingCode = null;
+    client.data.user = null;
+
+    console.log(`Client ${client.id} disconnected from meeting ${meetingCode}`);
   }
 
   @SubscribeMessage('join-room-preview')
@@ -181,7 +196,7 @@ export class SignalingGateway
         users: currentUsers,
       });
 
-      client.emit('call-users', {
+      this.server.to(meetingCode).emit('call-users', {
         users: currentUsers,
       });
 
@@ -196,8 +211,14 @@ export class SignalingGateway
 
     client.leave(meetingCode);
     client.data.meetingCode = null;
+    client.data.user = null;
 
     console.log(`Client ${client.id} left room ${meetingCode}`);
+
+    return {
+      success: true,
+      meetingCode,
+    };
   }
 
   @SubscribeMessage('join-conversation')
