@@ -1,18 +1,21 @@
 import { useEffect, useMemo, useState } from "react";
-import ParticipantCard from "./ParticipantCard";
-import ControlBar from "./ControlBar";
 import { useWebRTCContext } from "../contexts/WebRTCContext";
+import SpotlightLayout from "./layouts/SpotlightLayout";
+import GridLayout from "./layouts/GridLayout";
+import SidebarLayout from "./layouts/SidebarLayout";
 
-type VideoGridProps = {
-  localTitle: string;
-  onLeaveRoom: () => void | Promise<void>;
-};
+export type LayoutMode = "spotlight" | "grid" | "sidebar";
 
-type Participant = {
+export type Participant = {
   id: string;
   title: string;
   isLocal: boolean;
   stream: MediaStream | null;
+};
+
+type VideoGridProps = {
+  localTitle: string;
+  onLeaveRoom: () => void | Promise<void>;
 };
 
 function VideoGrid({ localTitle, onLeaveRoom }: VideoGridProps) {
@@ -26,6 +29,9 @@ function VideoGrid({ localTitle, onLeaveRoom }: VideoGridProps) {
     toggleCamera,
     toggleMic,
   } = useWebRTCContext();
+
+  const [pinnedId, setPinnedId] = useState("local");
+  const [layoutMode, setLayoutMode] = useState<LayoutMode>("spotlight");
 
   const participants = useMemo<Participant[]>(
     () => [
@@ -45,8 +51,6 @@ function VideoGrid({ localTitle, onLeaveRoom }: VideoGridProps) {
     [localTitle, localStream, remoteStreams],
   );
 
-  const [pinnedId, setPinnedId] = useState("local");
-
   useEffect(() => {
     if (!participants.some((item) => item.id === pinnedId)) {
       setPinnedId("local");
@@ -64,52 +68,67 @@ function VideoGrid({ localTitle, onLeaveRoom }: VideoGridProps) {
     void joinRoom();
   };
 
+  const handleChangeLayout = () => {
+    setLayoutMode((prev) => {
+      if (prev === "spotlight") return "grid";
+      if (prev === "grid") return "sidebar";
+      return "spotlight";
+    });
+  };
+
+  if (layoutMode === "grid") {
+    return (
+      <GridLayout
+        participants={participants}
+        joined={joined}
+        cameraEnabled={cameraEnabled}
+        micEnabled={micEnabled}
+        layoutMode={layoutMode}
+        onChangeLayout={handleChangeLayout}
+        onJoinRoom={handleJoinRoom}
+        onLeaveRoom={onLeaveRoom}
+        onToggleCamera={toggleCamera}
+        onToggleMic={toggleMic}
+        onPin={setPinnedId}
+      />
+    );
+  }
+
+  if (layoutMode === "sidebar") {
+    return (
+      <SidebarLayout
+        pinnedParticipant={pinnedParticipant}
+        otherParticipants={otherParticipants}
+        joined={joined}
+        cameraEnabled={cameraEnabled}
+        micEnabled={micEnabled}
+        layoutMode={layoutMode}
+        onChangeLayout={handleChangeLayout}
+        onJoinRoom={handleJoinRoom}
+        onLeaveRoom={onLeaveRoom}
+        onToggleCamera={toggleCamera}
+        onToggleMic={toggleMic}
+        onPin={setPinnedId}
+      />
+    );
+  }
+
   return (
-    <section className="flex h-full min-h-0 flex-col gap-2">
-      {otherParticipants.length > 0 && (
-        <div className="shrink-0 rounded-xl border border-slate-800/80 bg-slate-900/60 p-2">
-          <div className="custom-scrollbar flex gap-2 overflow-x-auto overflow-y-hidden pb-1">
-            {otherParticipants.map((participant) => (
-              <div
-                key={participant.id}
-                className="p-1 w-[150px] shrink-0 rounded-xl transition hover:scale-[1.02]"
-              >
-                <ParticipantCard
-                  title={participant.title}
-                  stream={participant.stream}
-                  muted={participant.isLocal}
-                  small
-                  onClick={() => setPinnedId(participant.id)}
-                />
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <div className="relative flex min-h-0 flex-1 items-stretch justify-center">
-        <div className="pb-15 pr-15 pl-15 pt-5 h-full w-full max-w-6xl overflow-hidden rounded-2xl">
-          <ParticipantCard
-            title={pinnedParticipant.title}
-            stream={pinnedParticipant.stream}
-            muted={pinnedParticipant.isLocal}
-            active
-          />
-        </div>
-
-        <div className="absolute bottom-1 left-1/2 -translate-x-1/2">
-          <ControlBar
-            joined={joined}
-            cameraEnabled={cameraEnabled}
-            micEnabled={micEnabled}
-            onJoinRoom={handleJoinRoom}
-            onLeaveRoom={onLeaveRoom}
-            onToggleCamera={toggleCamera}
-            onToggleMic={toggleMic}
-          />
-        </div>
-      </div>
-    </section>
+    <SpotlightLayout
+      participants={participants}
+      pinnedParticipant={pinnedParticipant}
+      otherParticipants={otherParticipants}
+      joined={joined}
+      cameraEnabled={cameraEnabled}
+      micEnabled={micEnabled}
+      layoutMode={layoutMode}
+      onChangeLayout={handleChangeLayout}
+      onJoinRoom={handleJoinRoom}
+      onLeaveRoom={onLeaveRoom}
+      onToggleCamera={toggleCamera}
+      onToggleMic={toggleMic}
+      onPin={setPinnedId}
+    />
   );
 }
 

@@ -73,7 +73,7 @@ export function useWebRTC() {
   //-----------------------Fake users for testing-----------------------
   const DEBUG_FAKE_USERS = true;
   const displayRemoteStreams = DEBUG_FAKE_USERS
-    ? createFakeParticipants(20)
+    ? createFakeParticipants(3)
     : remoteStreams;
   //-----------------------Fake users for testing-----------------------
 

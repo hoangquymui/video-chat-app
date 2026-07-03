@@ -1,11 +1,23 @@
-import { Mic, MicOff, Video, VideoOff, PhoneOff } from "lucide-react";
+import {
+  Mic,
+  MicOff,
+  Video,
+  VideoOff,
+  PhoneOff,
+  LayoutGrid,
+} from "lucide-react";
+import type { LayoutMode } from "./VideoGrid";
 
 type ControlBarProps = {
   joined: boolean;
   cameraEnabled: boolean;
   micEnabled: boolean;
+
+  layoutMode: LayoutMode;
+  onChangeLayout: () => void;
+
   onJoinRoom: () => void;
-  onLeaveRoom: () => void;
+  onLeaveRoom: () => void | Promise<void>;
   onToggleCamera: () => void;
   onToggleMic: () => void;
 };
@@ -14,14 +26,23 @@ function ControlBar({
   joined,
   cameraEnabled,
   micEnabled,
+  layoutMode,
+  onChangeLayout,
   onJoinRoom,
   onLeaveRoom,
   onToggleCamera,
   onToggleMic,
 }: ControlBarProps) {
+  const layoutLabel =
+    layoutMode === "spotlight"
+      ? "Spotlight"
+      : layoutMode === "grid"
+        ? "Grid"
+        : "Sidebar";
+
   return (
     <div className="flex justify-center">
-      <div className="flex items-center gap-3 rounded-full bg-slate-900/95 px-4 py-3 shadow-2xl backdrop-blur">
+      <div className="flex items-center gap-3 rounded-full border border-slate-700/70 bg-slate-900/95 px-4 py-3 shadow-2xl backdrop-blur">
         {joined && (
           <>
             <button
@@ -46,6 +67,14 @@ function ControlBar({
               title={cameraEnabled ? "Tắt camera" : "Bật camera"}
             >
               {cameraEnabled ? <Video size={20} /> : <VideoOff size={20} />}
+            </button>
+
+            <button
+              onClick={onChangeLayout}
+              className="flex h-11 w-11 items-center justify-center rounded-full bg-slate-700 transition hover:bg-slate-600"
+              title={`Đổi layout: ${layoutLabel}`}
+            >
+              <LayoutGrid size={20} />
             </button>
           </>
         )}
