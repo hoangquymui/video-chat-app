@@ -57,6 +57,9 @@ function UserForm({ open, mode, user, onClose, onSubmit }: UserFormProps) {
       }
 
       onClose();
+    } catch (error) {
+      console.error(error);
+      alert("Không thể lưu tài khoản. Vui lòng kiểm tra dữ liệu và thử lại.");
     } finally {
       setLoading(false);
     }

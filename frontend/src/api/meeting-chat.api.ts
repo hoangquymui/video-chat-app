@@ -1,8 +1,8 @@
 import { api } from "./axios";
-import type { Message } from "../types/chat.type";
+import type { MeetingMessage } from "../types/meeting-chat.type";
 
 export const getMeetingMessagesApi = async (meetingCode: string) => {
-  const response = await api.get<Message[]>(
+  const response = await api.get<MeetingMessage[]>(
     `/chat/meetings/${meetingCode}/messages`,
   );
 
@@ -13,7 +13,7 @@ export const sendMeetingMessageApi = async (
   meetingCode: string,
   content: string,
 ) => {
-  const response = await api.post<Message>(
+  const response = await api.post<MeetingMessage>(
     `/chat/meetings/${meetingCode}/messages`,
     { content },
   );

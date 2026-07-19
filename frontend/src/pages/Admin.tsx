@@ -1,4 +1,4 @@
-import { ArrowLeft, Users, UserRoundCog } from "lucide-react";
+import { Users, UserRoundCog } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 function Admin() {

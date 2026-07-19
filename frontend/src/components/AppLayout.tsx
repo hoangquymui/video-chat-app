@@ -6,7 +6,6 @@ import {
   House,
   LogOut,
   Menu,
-  Users,
   Video,
   Shield,
   type LucideIcon,

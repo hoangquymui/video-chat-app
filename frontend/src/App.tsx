@@ -7,7 +7,7 @@ import Admin from "./pages/Admin";
 import AdminGroups from "./pages/AdminGroups";
 import AppLayout from "./components/AppLayout";
 import Rooms from "./pages/Rooms";
-import Meeting from "./pages/Meeting";
+import MeetingPage from "./pages/Meeting";
 import { useAuth } from "./hooks/useAuth";
 
 function App() {
@@ -33,7 +33,7 @@ function App() {
         <Route path="/home" element={<Home />} />
         <Route path="/call" element={<Call />} />
         <Route path="/call/:roomId" element={<Call />} />
-        <Route path="/meeting/:meetingCode" element={<Meeting />} />
+        <Route path="/meeting/:meetingCode" element={<MeetingPage />} />
         <Route path="/rooms" element={<Rooms />} />
 
         <Route

@@ -18,15 +18,32 @@ type AuthProviderProps = {
 };
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const [user, setUser] = useState<User | null>(null);
-  const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [user, setUser] = useState<User | null>(() => {
+    try {
+      const raw = localStorage.getItem("user");
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      localStorage.removeItem("user");
+      localStorage.removeItem("accessToken");
+      return null;
+    }
+  });
+  const [accessToken, setAccessToken] = useState<string | null>(() =>
+    localStorage.getItem("accessToken"),
+  );
 
   useEffect(() => {
-    const token = localStorage.getItem("accessToken");
-    const userRaw = localStorage.getItem("user");
-
-    setAccessToken(token);
-    setUser(userRaw ? JSON.parse(userRaw) : null);
+    const syncAuth = () => {
+      setAccessToken(localStorage.getItem("accessToken"));
+      try {
+        const raw = localStorage.getItem("user");
+        setUser(raw ? JSON.parse(raw) : null);
+      } catch {
+        setUser(null);
+      }
+    };
+    window.addEventListener("storage", syncAuth);
+    return () => window.removeEventListener("storage", syncAuth);
   }, []);
 
   const login = async (data: LoginData) => {

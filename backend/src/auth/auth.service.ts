@@ -1,6 +1,7 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
+import { isPasswordHash, verifyPassword } from './password';
 
 type LoginInput = {
   email: string;
@@ -21,8 +22,12 @@ export class AuthService {
       throw new UnauthorizedException('Email hoặc mật khẩu không đúng');
     }
 
-    if (user.password !== data.password) {
+    if (!(await verifyPassword(data.password, user.password))) {
       throw new UnauthorizedException('Email hoặc mật khẩu không đúng');
+    }
+
+    if (!isPasswordHash(user.password)) {
+      await this.usersService.upgradePasswordHash(user.id, data.password);
     }
 
     const payload = {

@@ -1,10 +1,11 @@
 import { useNavigate } from "react-router-dom";
 import type { User } from "../types/user.type";
+import { getStoredUser } from "../services/auth-storage";
 
 function Dashboard() {
   const navigate = useNavigate();
 
-  const user: User | null = JSON.parse(localStorage.getItem("user") || "null");
+  const user: User | null = getStoredUser();
 
   return (
     <main className="min-h-full px-8 py-8">

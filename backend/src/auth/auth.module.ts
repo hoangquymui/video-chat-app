@@ -7,6 +7,7 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './jwt.strategy';
 import { UsersModule } from '../users/users.module';
+import { getJwtSecret } from './jwt.config';
 
 @Module({
   imports: [
@@ -19,8 +20,7 @@ import { UsersModule } from '../users/users.module';
         const expiresIn = configService.get<string>('JWT_EXPIRES_IN') ?? '7d';
 
         return {
-          secret:
-            configService.get<string>('JWT_SECRET') ?? 'video_call_secret_key',
+          secret: getJwtSecret(configService),
           signOptions: {
             expiresIn: expiresIn as JwtSignOptions['expiresIn'],
           },

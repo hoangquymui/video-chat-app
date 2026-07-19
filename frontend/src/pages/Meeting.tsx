@@ -9,7 +9,7 @@ import type { Meeting } from "../types/meeting.type";
 import { useMeetingChat } from "../hooks/useMeetingChat";
 import { useActiveMeeting } from "../contexts/ActiveMeetingContext";
 
-function Meeting() {
+function MeetingPage() {
   const { meetingCode } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -242,4 +242,4 @@ function Meeting() {
   );
 }
 
-export default Meeting;
+export default MeetingPage;

@@ -4,13 +4,13 @@ import {
   sendMeetingMessageApi,
 } from "../api/meeting-chat.api";
 import { socket } from "../services/socket";
-import type { Message } from "../types/chat.type";
+import type { MeetingMessage } from "../types/meeting-chat.type";
 
 export function useMeetingChat(meetingCode: string) {
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<MeetingMessage[]>([]);
   const [messagesLoading, setMessagesLoading] = useState(false);
 
-  const addMessage = (message: Message) => {
+  const addMessage = (message: MeetingMessage) => {
     setMessages((prev) => {
       const existed = prev.some((item) => item.id === message.id);
       return existed ? prev : [...prev, message];
@@ -53,7 +53,7 @@ export function useMeetingChat(meetingCode: string) {
 
     loadMessages();
 
-    const handleNewMessage = (message: Message) => {
+    const handleNewMessage = (message: MeetingMessage) => {
       if (message.meetingCode !== meetingCode) return;
       addMessage(message);
     };
