@@ -9,13 +9,15 @@ import {
 } from "lucide-react";
 import { Group, Panel, Separator } from "react-resizable-panels";
 import { getChatUsersApi } from "../api/user.api";
-import { createRoomApi } from "../api/room.api";
+import { createRoomApi, findOrCreateDirectRoomApi } from "../api/room.api";
+import { useNavigate } from "react-router-dom";
 import CreateGroupModal from "../components/CreateGroupModal";
 import type { User } from "../types/user.type";
 import { useAuth } from "../hooks/useAuth";
 import { useDirectChat } from "../hooks/useDirectChat";
 
 function Home() {
+  const navigate = useNavigate();
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const { user: currentUser } = useAuth();
 
@@ -27,6 +29,7 @@ function Home() {
   const [keyword, setKeyword] = useState("");
   const [messageText, setMessageText] = useState("");
   const [groupModalOpen, setGroupModalOpen] = useState(false);
+  const [startingCall, setStartingCall] = useState(false);
 
   const [showInfo, setShowInfo] = useState(false);
 
@@ -75,6 +78,20 @@ function Home() {
     return name?.trim().charAt(0).toUpperCase() || "?";
   };
 
+  const handleStartCall = async () => {
+    if (!selectedUser || !currentUser || startingCall) return;
+    try {
+      setStartingCall(true);
+      const room = await findOrCreateDirectRoomApi(selectedUser.id);
+      navigate(`/call/${room.id}`);
+    } catch (error) {
+      console.error(error);
+      alert("Không thể bắt đầu cuộc gọi");
+    } finally {
+      setStartingCall(false);
+    }
+  };
+
   const handleCreateGroup = async (groupName: string, members: User[]) => {
     await createRoomApi({
       name: groupName,
@@ -104,18 +121,18 @@ function Home() {
         <Group orientation="horizontal" autoSave="home-chat-layout-v2">
           <Panel defaultSize="200px" maxSize="200px" className="bg-slate-900">
             <aside className="flex h-full flex-col border-r border-slate-800">
-              <div className="p-4">
+              <div className="p-3">
                 <div className="flex items-center justify-between">
-                  <h1 className="text-2xl font-bold">Chat</h1>
+                  <h1 className="text-lg font-bold tracking-tight">Chat</h1>
 
                   <div className="flex gap-2">
-                    <button className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-800 hover:bg-slate-700">
+                    <button className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-800 hover:bg-slate-700">
                       <MoreHorizontal size={20} />
                     </button>
 
                     <button
                       onClick={() => setGroupModalOpen(true)}
-                      className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-800 hover:bg-slate-700"
+                      className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-800 hover:bg-slate-700"
                       title="Tạo nhóm gọi"
                     >
                       <Pencil size={20} />
@@ -123,7 +140,7 @@ function Home() {
                   </div>
                 </div>
 
-                <div className="mt-4 flex items-center gap-2 rounded-full bg-slate-800 px-4 py-2 text-slate-400">
+                <div className="mt-3 flex h-8 items-center gap-2 rounded-lg bg-slate-800 px-3 text-slate-400">
                   <Search size={18} />
                   <input
                     value={keyword}
@@ -151,11 +168,11 @@ function Home() {
                       <button
                         key={user.id}
                         onClick={() => selectUser(user)}
-                        className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition-colors ${
+                        className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors ${
                           active ? "bg-slate-800" : "hover:bg-slate-800"
                         }`}
                       >
-                        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-slate-700 text-lg font-bold text-white">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-700 text-sm font-bold text-white">
                           {getAvatarText(user.name)}
                         </div>
 
@@ -181,9 +198,9 @@ function Home() {
             <section className="flex h-full min-w-0 flex-col">
               {selectedUser ? (
                 <>
-                  <header className="flex h-[74px] shrink-0 items-center justify-between border-b border-slate-800 px-4">
+                  <header className="flex h-[58px] shrink-0 items-center justify-between border-b border-slate-800 px-3.5">
                     <div className="flex min-w-0 items-center gap-3">
-                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-slate-700 font-bold text-white">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-700 text-xs font-bold text-white">
                         {getAvatarText(selectedUser.name)}
                       </div>
 
@@ -198,7 +215,12 @@ function Home() {
                     </div>
 
                     <div className="flex gap-3 text-blue-500">
-                      <button className="rounded-full p-2 hover:bg-slate-800">
+                      <button
+                        onClick={handleStartCall}
+                        disabled={startingCall}
+                        className="rounded-lg p-2 hover:bg-slate-800 disabled:opacity-50"
+                        title="Bắt đầu gọi video"
+                      >
                         <Video size={22} />
                       </button>
 
@@ -215,7 +237,7 @@ function Home() {
                     </div>
                   </header>
 
-                  <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto px-6 py-5">
+                  <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto px-4 py-3.5">
                     {messagesLoading ? (
                       <div className="flex h-full items-center justify-center text-slate-500">
                         Đang tải tin nhắn...
@@ -237,7 +259,7 @@ function Home() {
                               }`}
                             >
                               <div
-                                className={`max-w-[70%] rounded-2xl px-4 py-3 text-sm ${
+                                className={`max-w-[70%] rounded-xl px-3 py-2 text-sm ${
                                   mine
                                     ? "bg-blue-600 text-white"
                                     : "bg-slate-800 text-slate-100"

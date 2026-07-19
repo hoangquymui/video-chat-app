@@ -21,32 +21,32 @@ function Login() {
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-950 px-6">
+    <main className="flex min-h-screen items-center justify-center bg-[#080b12] px-5">
       <form
         onSubmit={handleLogin}
-        className="w-full max-w-md rounded-2xl bg-slate-900 p-8 shadow-2xl"
+        className="w-full max-w-[360px] rounded-xl border border-white/8 bg-[#0d111b] p-6 shadow-2xl shadow-black/40"
       >
         <h1 className="text-center text-3xl font-bold text-white">Đăng nhập</h1>
 
-        <p className="mt-2 text-center text-slate-400">Video Call App</p>
+        <p className="mt-1 text-center text-xs text-slate-500">VIDA workspace</p>
 
-        <div className="mt-8">
+        <div className="mt-6">
           <label className="text-sm font-medium text-slate-300">Email</label>
           <input
             value={email}
             onChange={(event) => setEmail(event.target.value)}
             type="email"
-            className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-white outline-none focus:border-blue-500"
+            className="mt-1.5 h-9 w-full rounded-lg border border-white/8 bg-white/5 px-3 text-sm text-white outline-none focus:border-indigo-500"
           />
         </div>
 
-        <div className="mt-5">
+        <div className="mt-4">
           <label className="text-sm font-medium text-slate-300">Mật khẩu</label>
           <input
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             type="password"
-            className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-white outline-none focus:border-blue-500"
+            className="mt-1.5 h-9 w-full rounded-lg border border-white/8 bg-white/5 px-3 text-sm text-white outline-none focus:border-indigo-500"
           />
         </div>
 
@@ -58,7 +58,7 @@ function Login() {
 
         <button
           type="submit"
-          className="mt-8 w-full rounded-xl bg-blue-600 px-4 py-3 font-semibold text-white hover:bg-blue-700"
+          className="mt-6 h-9 w-full rounded-lg bg-indigo-500 px-4 text-sm font-semibold text-white hover:bg-indigo-400"
         >
           Đăng nhập
         </button>

@@ -5,17 +5,17 @@ function Admin() {
   const navigate = useNavigate();
 
   return (
-    <main className="min-h-full bg-slate-950 px-8 py-8 text-white">
-      <div className="mx-auto max-w-6xl">
-        <h1 className="text-3xl font-bold">Admin</h1>
+    <main className="min-h-full bg-slate-950 px-5 py-5 text-white">
+      <div className="mx-auto max-w-5xl">
+        <h1 className="text-xl font-bold">Admin</h1>
         <p className="mt-2 text-slate-400">Quản trị hệ thống video call.</p>
 
-        <div className="mt-8 grid gap-6 md:grid-cols-2">
+        <div className="mt-5 grid gap-3 md:grid-cols-2">
           <button
             onClick={() => navigate("/admin/users")}
-            className="rounded-2xl border border-slate-800 bg-slate-900 p-6 text-left transition hover:border-blue-600"
+            className="rounded-xl border border-slate-800 bg-slate-900 p-4 text-left transition hover:border-indigo-500"
           >
-            <UserRoundCog className="text-blue-500" size={32} />
+            <UserRoundCog className="text-indigo-400" size={24} />
             <h2 className="mt-4 text-xl font-bold">Quản lý user</h2>
             <p className="mt-2 text-slate-400">
               Thêm, sửa, xoá và phân quyền tài khoản.
@@ -24,9 +24,9 @@ function Admin() {
 
           <button
             onClick={() => navigate("/admin/groups")}
-            className="rounded-2xl border border-slate-800 bg-slate-900 p-6 text-left transition hover:border-blue-600"
+            className="rounded-xl border border-slate-800 bg-slate-900 p-4 text-left transition hover:border-indigo-500"
           >
-            <Users className="text-blue-500" size={32} />
+            <Users className="text-indigo-400" size={24} />
             <h2 className="mt-4 text-xl font-bold">Quản lý nhóm</h2>
             <p className="mt-2 text-slate-400">
               Xem và quản lý các nhóm/phòng họp đã tạo.

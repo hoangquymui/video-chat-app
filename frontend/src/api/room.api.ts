@@ -6,6 +6,11 @@ export const createRoomApi = async (data: CreateRoomData) => {
   return response.data;
 };
 
+export const findOrCreateDirectRoomApi = async (userId: number) => {
+  const response = await api.post<Room>(`/rooms/direct/${userId}`);
+  return response.data;
+};
+
 export const getMyRoomsApi = async () => {
   const response = await api.get<Room[]>("/rooms/me");
   return response.data;

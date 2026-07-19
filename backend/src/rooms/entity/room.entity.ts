@@ -18,6 +18,9 @@ export class Room {
   @Column()
   createdBy: number;
 
+  @Column({ type: 'varchar', unique: true, nullable: true, length: 80 })
+  directKey: string | null;
+
   @CreateDateColumn()
   createdAt: Date;
 

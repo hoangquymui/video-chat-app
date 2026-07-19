@@ -48,6 +48,64 @@ export class RoomsService {
     return this.findById(savedRoom.id);
   }
 
+  private async findOrCreateDirectRoomLegacy(
+    currentUserId: number,
+    otherUserId: number,
+    currentUserName: string,
+  ): Promise<Room | null> {
+    if (currentUserId === otherUserId) {
+      throw new NotFoundException('Không thể tự gọi chính mình');
+    }
+
+    const directKey = [currentUserId, otherUserId].sort((a, b) => a - b).join(':');
+    const existing = await this.roomsRepository.findOne({
+      where: { directKey },
+      relations: { members: true },
+    });
+    if (existing) return existing;
+
+    const room = this.roomsRepository.create({
+      name: `Cuộc gọi của ${currentUserName}`,
+      createdBy: currentUserId,
+      directKey,
+    });
+    const savedRoom = await this.roomsRepository.save(room);
+    await this.roomMembersRepository.save([
+      this.roomMembersRepository.create({ roomId: savedRoom.id, userId: currentUserId, role: 'owner' }),
+      this.roomMembersRepository.create({ roomId: savedRoom.id, userId: otherUserId, role: 'member' }),
+    ]);
+    return this.findById(savedRoom.id);
+  }
+
+  async findOrCreateDirectRoom(
+    currentUserId: number,
+    otherUserId: number,
+    currentUserName: string,
+  ): Promise<Room | null> {
+    if (currentUserId === otherUserId) {
+      throw new NotFoundException('Không thể tự gọi chính mình');
+    }
+
+    const directKey = [currentUserId, otherUserId].sort((a, b) => a - b).join(':');
+    const existing = await this.roomsRepository.findOne({
+      where: { directKey },
+      relations: { members: true },
+    });
+    if (existing) return existing;
+
+    const room = this.roomsRepository.create({
+      name: `Cuộc gọi của ${currentUserName}`,
+      createdBy: currentUserId,
+      directKey,
+    });
+    const savedRoom = await this.roomsRepository.save(room);
+    await this.roomMembersRepository.save([
+      this.roomMembersRepository.create({ roomId: savedRoom.id, userId: currentUserId, role: 'owner' }),
+      this.roomMembersRepository.create({ roomId: savedRoom.id, userId: otherUserId, role: 'member' }),
+    ]);
+    return this.findById(savedRoom.id);
+  }
+
   findById(id: number): Promise<Room | null> {
     return this.roomsRepository.findOne({
       where: { id },
