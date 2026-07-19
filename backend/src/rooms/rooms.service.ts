@@ -1,6 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { IsNull, Repository } from 'typeorm';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { RoomMember } from './entity/room-member.entity';
 import { Room } from './entity/room.entity';
@@ -124,14 +129,17 @@ export class RoomsService {
     return this.roomsRepository
       .createQueryBuilder('room')
       .leftJoinAndSelect('room.members', 'member')
-      .where('room.createdBy = :userId', { userId })
-      .orWhere('member.userId = :userId', { userId })
+      .where('room.directKey IS NULL')
+      .andWhere('(room.createdBy = :userId OR member.userId = :userId)', {
+        userId,
+      })
       .orderBy('room.createdAt', 'DESC')
       .getMany();
   }
 
   findAll(): Promise<Room[]> {
     return this.roomsRepository.find({
+      where: { directKey: IsNull() },
       relations: {
         members: true,
       },
@@ -202,7 +210,26 @@ export class RoomsService {
     return this.findById(roomId);
   }
 
-  async removeMember(roomId: number, userId: number): Promise<Room | null> {
+  async removeMember(
+    roomId: number,
+    userId: number,
+    requesterId: number,
+    requesterIsAdmin = false,
+  ): Promise<Room | null> {
+    const room = await this.roomsRepository.findOne({ where: { id: roomId } });
+
+    if (!room) {
+      throw new NotFoundException('Không tìm thấy phòng');
+    }
+
+    if (room.createdBy !== requesterId && !requesterIsAdmin) {
+      throw new ForbiddenException('Chỉ chủ phòng mới có thể xoá thành viên');
+    }
+
+    if (userId === room.createdBy) {
+      throw new BadRequestException('Không thể xoá chủ phòng');
+    }
+
     const member = await this.roomMembersRepository.findOne({
       where: { roomId, userId },
     });

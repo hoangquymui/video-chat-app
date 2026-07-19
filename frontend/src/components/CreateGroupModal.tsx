@@ -1,6 +1,7 @@
 import { Search, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { User } from "../types/user.type";
+import { useAppDialog } from "../contexts/AppDialogContext";
 
 type CreateGroupModalProps = {
   open: boolean;
@@ -15,6 +16,7 @@ function CreateGroupModal({
   onClose,
   onCreate,
 }: CreateGroupModalProps) {
+  const { confirmAction, notify } = useAppDialog();
   const [keyword, setKeyword] = useState("");
   const [groupName, setGroupName] = useState("");
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
@@ -57,14 +59,21 @@ function CreateGroupModal({
     const members = users.filter((user) => selectedIds.includes(user.id));
 
     if (!groupName.trim()) {
-      alert("Vui lòng nhập tên nhóm");
+      await notify("Vui lòng nhập tên nhóm");
       return;
     }
 
     if (members.length === 0) {
-      alert("Vui lòng chọn ít nhất 1 người");
+      await notify("Vui lòng chọn ít nhất 1 người");
       return;
     }
+
+    const confirmed = await confirmAction({
+      title: "Tạo nhóm mới",
+      message: `Bạn có chắc muốn tạo nhóm “${groupName.trim()}” với ${members.length} thành viên?`,
+      confirmLabel: "Có, tạo nhóm",
+    });
+    if (!confirmed) return;
 
     try {
       setLoading(true);
@@ -73,23 +82,22 @@ function CreateGroupModal({
 
       resetForm();
       onClose();
-    } catch (error) {
-      console.error(error);
-      alert("Tạo nhóm thất bại");
+    } catch {
+      await notify("Tạo nhóm thất bại");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-6">
-      <div className="w-full max-w-lg rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm">
+      <div className="w-full max-w-md rounded-xl border border-white/8 bg-[#0d111b] p-5 shadow-2xl">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-bold text-white">Tạo nhóm gọi</h2>
 
           <button
             onClick={handleClose}
-            className="rounded-full p-2 text-slate-400 hover:bg-slate-800 hover:text-white"
+            className="flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-white/7 hover:text-white"
           >
             <X size={20} />
           </button>
@@ -99,10 +107,10 @@ function CreateGroupModal({
           value={groupName}
           onChange={(event) => setGroupName(event.target.value)}
           placeholder="Tên nhóm"
-          className="mt-5 w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-white outline-none focus:border-blue-500"
+          className="mt-4 h-9 w-full rounded-md border border-white/8 bg-white/5 px-3 text-sm text-white outline-none focus:border-indigo-400"
         />
 
-        <div className="mt-4 flex items-center gap-2 rounded-xl bg-slate-800 px-4 py-3 text-slate-400">
+        <div className="mt-3 flex h-9 items-center gap-2 rounded-md border border-white/7 bg-white/4 px-3 text-slate-400">
           <Search size={18} />
           <input
             value={keyword}
@@ -112,7 +120,7 @@ function CreateGroupModal({
           />
         </div>
 
-        <div className="mt-4 max-h-[320px] overflow-auto">
+        <div className="mt-3 max-h-[280px] overflow-auto">
           {filteredUsers.length === 0 ? (
             <div className="px-3 py-6 text-center text-sm text-slate-400">
               Không tìm thấy người dùng
@@ -125,13 +133,13 @@ function CreateGroupModal({
                 <button
                   key={user.id}
                   onClick={() => toggleUser(user.id)}
-                  className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left hover:bg-slate-800 ${
-                    checked ? "bg-slate-800" : ""
+                  className={`flex w-full items-center gap-3 rounded-md px-2.5 py-2 text-left hover:bg-white/5 ${
+                    checked ? "bg-indigo-500/10" : ""
                   }`}
                 >
                   <input type="checkbox" checked={checked} readOnly />
 
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-700 font-bold text-white">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-white/8 text-xs font-bold text-white">
                     {user.name.charAt(0).toUpperCase()}
                   </div>
 
@@ -149,11 +157,11 @@ function CreateGroupModal({
           )}
         </div>
 
-        <div className="mt-6 flex justify-end gap-3">
+        <div className="mt-5 flex justify-end gap-2">
           <button
             onClick={handleClose}
             disabled={loading}
-            className="rounded-xl bg-slate-700 px-5 py-3 font-semibold text-white hover:bg-slate-600 disabled:opacity-60"
+            className="h-9 rounded-md bg-white/7 px-4 text-xs font-semibold text-white hover:bg-white/12 disabled:opacity-60"
           >
             Huỷ
           </button>
@@ -161,7 +169,7 @@ function CreateGroupModal({
           <button
             onClick={handleCreate}
             disabled={loading}
-            className="rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
+            className="h-9 rounded-md bg-indigo-500 px-4 text-xs font-semibold text-white hover:bg-indigo-400 disabled:opacity-60"
           >
             {loading ? "Đang tạo..." : "Tạo nhóm"}
           </button>

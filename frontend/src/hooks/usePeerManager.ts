@@ -176,8 +176,7 @@ export function usePeerManager({
 
       try {
         await peer.addIceCandidate(candidate);
-      } catch (error) {
-        console.error("Lỗi ICE candidate:", error);
+      } catch {
       }
     },
     [],

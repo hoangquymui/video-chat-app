@@ -9,9 +9,9 @@ type UserTableProps = {
 
 function UserTable({ users, loading, onEdit, onDelete }: UserTableProps) {
   return (
-    <div className="mt-8 overflow-hidden rounded-2xl border border-slate-800 bg-slate-900">
+    <div className="mt-5 overflow-hidden rounded-xl border border-white/7 bg-[#0d111b]">
       <table className="w-full text-left">
-        <thead className="bg-slate-800 text-sm text-slate-300">
+        <thead className="bg-white/4 text-xs uppercase tracking-wider text-slate-500">
           <tr>
             <th className="px-5 py-4">ID</th>
             <th className="px-5 py-4">Tên</th>
@@ -39,7 +39,7 @@ function UserTable({ users, loading, onEdit, onDelete }: UserTableProps) {
             users.map((user) => (
               <tr
                 key={user.id}
-                className="border-t border-slate-800 text-slate-300"
+                className="border-t border-white/6 text-sm text-slate-300 hover:bg-white/[0.02]"
               >
                 <td className="px-5 py-4">{user.id}</td>
 

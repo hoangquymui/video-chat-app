@@ -6,16 +6,19 @@ import { ActiveMeetingProvider } from "./contexts/ActiveMeetingContext";
 import { WebRTCProvider } from "./contexts/WebRTCContext";
 import "./index.css";
 import App from "./App";
+import { AppDialogProvider } from "./contexts/AppDialogContext";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <BrowserRouter>
       <AuthProvider>
-        <ActiveMeetingProvider>
-          <WebRTCProvider>
-            <App />
-          </WebRTCProvider>
-        </ActiveMeetingProvider>
+        <AppDialogProvider>
+          <ActiveMeetingProvider>
+            <WebRTCProvider>
+              <App />
+            </WebRTCProvider>
+          </ActiveMeetingProvider>
+        </AppDialogProvider>
       </AuthProvider>
     </BrowserRouter>
   </StrictMode>,

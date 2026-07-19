@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 import { socket } from "../services/socket";
 import type { OnlineUser } from "../types/webrtc.type";
+import { useAppDialog } from "../contexts/AppDialogContext";
 
 type ActiveCall = {
   meetingCode: string;
@@ -45,6 +46,7 @@ export function useMeetingLifecycle({
   unregisterSocketEvents,
   setOnlineUsers,
 }: UseMeetingLifecycleParams) {
+  const { notify } = useAppDialog();
   const [activeCall, setActiveCall] = useState<ActiveCall | null>(null);
   const [joined, setJoined] = useState(false);
 
@@ -76,7 +78,7 @@ export function useMeetingLifecycle({
       const currentMeetingCode = meetingCode ?? meetingCodeRef.current;
 
       if (!user || !currentMeetingCode) {
-        alert("Không tìm thấy thông tin cuộc họp.");
+        await notify("Không tìm thấy thông tin cuộc họp.");
         return;
       }
 
@@ -113,6 +115,7 @@ export function useMeetingLifecycle({
       joinedRef,
       localStreamRef,
       meetingCodeRef,
+      notify,
       registerSocketEvents,
       startLocalCamera,
       user,
@@ -142,11 +145,7 @@ export function useMeetingLifecycle({
     return new Promise<void>((resolve) => {
       socket
         .timeout(1500)
-        .emit("leave-room", { meetingCode }, (error: Error | null) => {
-          if (error) {
-            console.warn("Leave room timeout:", error);
-          }
-
+        .emit("leave-room", { meetingCode }, (_error: Error | null) => {
           resolve();
         });
     });

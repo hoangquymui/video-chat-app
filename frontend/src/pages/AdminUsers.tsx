@@ -10,10 +10,12 @@ import UserTable from "../components/UserTable";
 import type { CreateUserData, UpdateUserData, User } from "../types/user.type";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAppDialog } from "../contexts/AppDialogContext";
 
 type FormMode = "create" | "edit";
 
 function AdminUsers() {
+  const { confirmAction, notify } = useAppDialog();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -26,9 +28,8 @@ function AdminUsers() {
       setLoading(true);
       const data = await getUsersApi();
       setUsers(data);
-    } catch (error) {
-      console.error(error);
-      alert("Không tải được danh sách user");
+    } catch {
+      setUsers([]);
     } finally {
       setLoading(false);
     }
@@ -67,37 +68,39 @@ function AdminUsers() {
   };
 
   const handleDelete = async (user: User) => {
-    const confirmed = confirm(
-      `Bạn có chắc muốn xoá user "${user.name}" không?`,
-    );
+    const confirmed = await confirmAction({
+      title: "Xoá tài khoản",
+      message: `Bạn có chắc muốn xoá user “${user.name}” không?`,
+      confirmLabel: "Có, xoá user",
+      tone: "danger",
+    });
 
     if (!confirmed) return;
 
     try {
       await deleteUserApi(user.id);
       await loadUsers();
-    } catch (error) {
-      console.error(error);
-      alert("Xoá user thất bại");
+    } catch {
+      await notify({ message: "Xoá user thất bại", tone: "danger" });
     }
   };
 
   return (
-    <main className="min-h-full px-8 py-8">
-      <div className="mx-auto max-w-6xl">
+    <main className="min-h-full bg-[#090d15] px-5 py-5">
+      <div className="mx-auto max-w-5xl">
         <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <button
               onClick={() => navigate(-1)}
-              className="flex h-11 w-11 items-center justify-center rounded-full bg-slate-800 text-slate-300 transition hover:bg-slate-700 hover:text-white"
+              className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/7 bg-white/5 text-slate-300 transition hover:bg-white/10 hover:text-white"
               title="Quay lại"
             >
-              <ArrowLeft size={22} />
+              <ArrowLeft size={17} />
             </button>
 
             <div>
               <h1 className="text-3xl font-bold text-white">Quản lý user</h1>
-              <p className="mt-1 text-slate-400">
+              <p className="mt-0.5 text-xs text-slate-400">
                 Thêm, sửa, xoá tài khoản trong hệ thống.
               </p>
             </div>
@@ -105,7 +108,7 @@ function AdminUsers() {
 
           <button
             onClick={openCreateForm}
-            className="rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white hover:bg-blue-700"
+            className="h-9 rounded-lg bg-indigo-500 px-4 text-xs font-semibold text-white transition hover:bg-indigo-400"
           >
             + Thêm user
           </button>

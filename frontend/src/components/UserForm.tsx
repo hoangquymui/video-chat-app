@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { CreateUserData, UpdateUserData, User } from "../types/user.type";
+import { useAppDialog } from "../contexts/AppDialogContext";
 
 type UserFormProps = {
   open: boolean;
@@ -10,6 +11,7 @@ type UserFormProps = {
 };
 
 function UserForm({ open, mode, user, onClose, onSubmit }: UserFormProps) {
+  const { confirmAction, notify } = useAppDialog();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -37,6 +39,16 @@ function UserForm({ open, mode, user, onClose, onSubmit }: UserFormProps) {
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
 
+    const confirmed = await confirmAction({
+      title: mode === "create" ? "Thêm tài khoản" : "Cập nhật tài khoản",
+      message:
+        mode === "create"
+          ? `Bạn có chắc muốn tạo tài khoản ${email}?`
+          : `Bạn có chắc muốn lưu thay đổi cho ${email}?`,
+      confirmLabel: mode === "create" ? "Có, thêm user" : "Có, lưu thay đổi",
+    });
+    if (!confirmed) return;
+
     setLoading(true);
 
     try {
@@ -57,9 +69,8 @@ function UserForm({ open, mode, user, onClose, onSubmit }: UserFormProps) {
       }
 
       onClose();
-    } catch (error) {
-      console.error(error);
-      alert("Không thể lưu tài khoản. Vui lòng kiểm tra dữ liệu và thử lại.");
+    } catch {
+      await notify("Không thể lưu tài khoản. Vui lòng kiểm tra dữ liệu và thử lại.");
     } finally {
       setLoading(false);
     }
@@ -69,13 +80,13 @@ function UserForm({ open, mode, user, onClose, onSubmit }: UserFormProps) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-6">
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-lg rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-2xl"
+        className="w-full max-w-md rounded-xl border border-white/8 bg-[#0d111b] p-5 shadow-2xl"
       >
-        <h2 className="text-2xl font-bold text-white">
+        <h2 className="text-lg font-bold text-white">
           {mode === "create" ? "Thêm user" : "Sửa user"}
         </h2>
 
-        <div className="mt-6">
+        <div className="mt-5">
           <label className="text-sm text-slate-300">Tên</label>
           <input
             value={name}

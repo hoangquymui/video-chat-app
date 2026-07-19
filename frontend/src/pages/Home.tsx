@@ -1,22 +1,25 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  Info,
+  PanelRightOpen,
   MoreHorizontal,
   Pencil,
   Search,
   Send,
-  Video,
+  PhoneCall,
 } from "lucide-react";
 import { Group, Panel, Separator } from "react-resizable-panels";
 import { getChatUsersApi } from "../api/user.api";
 import { createRoomApi, findOrCreateDirectRoomApi } from "../api/room.api";
 import { useNavigate } from "react-router-dom";
 import CreateGroupModal from "../components/CreateGroupModal";
+import ContactInfoPanel from "../components/ContactInfoPanel";
 import type { User } from "../types/user.type";
 import { useAuth } from "../hooks/useAuth";
 import { useDirectChat } from "../hooks/useDirectChat";
+import { useAppDialog } from "../contexts/AppDialogContext";
 
 function Home() {
+  const { notify } = useAppDialog();
   const navigate = useNavigate();
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const { user: currentUser } = useAuth();
@@ -56,9 +59,8 @@ function Home() {
       if (data.length > 0) {
         await selectUser(data[0]);
       }
-    } catch (error) {
-      console.error(error);
-      alert("Không tải được danh sách user");
+    } catch {
+      setUsers([]);
     } finally {
       setLoading(false);
     }
@@ -84,9 +86,8 @@ function Home() {
       setStartingCall(true);
       const room = await findOrCreateDirectRoomApi(selectedUser.id);
       navigate(`/call/${room.id}`);
-    } catch (error) {
-      console.error(error);
-      alert("Không thể bắt đầu cuộc gọi");
+    } catch {
+      await notify("Không thể bắt đầu cuộc gọi");
     } finally {
       setStartingCall(false);
     }
@@ -109,9 +110,8 @@ function Home() {
     try {
       setMessageText("");
       await sendMessage(content);
-    } catch (error) {
-      console.error(error);
-      alert("Gửi tin nhắn thất bại");
+    } catch {
+      await notify("Gửi tin nhắn thất bại");
     }
   };
 
@@ -168,11 +168,13 @@ function Home() {
                       <button
                         key={user.id}
                         onClick={() => selectUser(user)}
-                        className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors ${
-                          active ? "bg-slate-800" : "hover:bg-slate-800"
+                        className={`flex w-full items-center gap-2.5 border-l-2 px-2.5 py-2 text-left transition-colors ${
+                          active
+                            ? "border-indigo-400 bg-indigo-500/8"
+                            : "border-transparent hover:bg-white/4"
                         }`}
                       >
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-700 text-sm font-bold text-white">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-white/8 bg-[#171d2a] text-xs font-bold text-indigo-300">
                           {getAvatarText(user.name)}
                         </div>
 
@@ -198,18 +200,18 @@ function Home() {
             <section className="flex h-full min-w-0 flex-col">
               {selectedUser ? (
                 <>
-                  <header className="flex h-[58px] shrink-0 items-center justify-between border-b border-slate-800 px-3.5">
+                  <header className="flex h-[58px] shrink-0 items-center justify-between border-b border-white/7 bg-[#0b0f18] px-4">
                     <div className="flex min-w-0 items-center gap-3">
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-700 text-xs font-bold text-white">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-indigo-500/15 text-xs font-bold text-indigo-300">
                         {getAvatarText(selectedUser.name)}
                       </div>
 
                       <div className="min-w-0">
-                        <h2 className="truncate font-bold text-white">
+                        <h2 className="truncate text-sm font-semibold text-white">
                           {selectedUser.name}
                         </h2>
-                        <p className="truncate text-sm text-slate-400">
-                          {selectedUser.email}
+                        <p className="truncate text-[11px] uppercase tracking-wider text-slate-500">
+                          Direct workspace · {selectedUser.email}
                         </p>
                       </div>
                     </div>
@@ -221,7 +223,7 @@ function Home() {
                         className="rounded-lg p-2 hover:bg-slate-800 disabled:opacity-50"
                         title="Bắt đầu gọi video"
                       >
-                        <Video size={22} />
+                        <PhoneCall size={18} />
                       </button>
 
                       <button
@@ -232,12 +234,12 @@ function Home() {
                             : "hover:bg-slate-800 text-blue-500"
                         }`}
                       >
-                        <Info size={22} />
+                        <PanelRightOpen size={18} />
                       </button>
                     </div>
                   </header>
 
-                  <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto px-4 py-3.5">
+                  <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto bg-[#090d15] px-5 py-4">
                     {messagesLoading ? (
                       <div className="flex h-full items-center justify-center text-slate-500">
                         Đang tải tin nhắn...
@@ -247,40 +249,39 @@ function Home() {
                         Chưa có tin nhắn. Hãy gửi tin nhắn đầu tiên.
                       </div>
                     ) : (
-                      <div className="space-y-3">
+                      <div className="mx-auto max-w-4xl space-y-1">
                         {messages.map((message) => {
                           const mine = message.senderId === currentUser?.id;
 
                           return (
-                            <div
+                            <article
                               key={message.id}
-                              className={`flex ${
-                                mine ? "justify-end" : "justify-start"
+                              className={`group grid grid-cols-[32px_1fr] gap-3 border-l-2 px-3 py-2.5 transition-colors ${
+                                mine
+                                  ? "border-indigo-500/60 bg-indigo-500/5"
+                                  : "border-transparent hover:bg-white/[0.025]"
                               }`}
                             >
-                              <div
-                                className={`max-w-[70%] rounded-xl px-3 py-2 text-sm ${
-                                  mine
-                                    ? "bg-blue-600 text-white"
-                                    : "bg-slate-800 text-slate-100"
-                                }`}
-                              >
-                                <p>{message.content}</p>
-
-                                <p
-                                  className={`mt-1 text-[11px] ${
-                                    mine ? "text-blue-100" : "text-slate-400"
-                                  }`}
-                                >
+                              <div className={`flex h-8 w-8 items-center justify-center rounded-md text-[11px] font-bold ${mine ? "bg-indigo-500 text-white" : "bg-slate-800 text-slate-300"}`}>
+                                {getAvatarText(mine ? currentUser?.name : selectedUser.name)}
+                              </div>
+                              <div className="min-w-0">
+                                <div className="flex items-baseline gap-2">
+                                  <span className="text-xs font-semibold text-slate-200">
+                                    {mine ? "Bạn" : selectedUser.name}
+                                  </span>
+                                  <time className="text-[10px] text-slate-600">
                                   {new Date(
                                     message.createdAt,
                                   ).toLocaleTimeString("vi-VN", {
                                     hour: "2-digit",
                                     minute: "2-digit",
                                   })}
-                                </p>
+                                  </time>
+                                </div>
+                                <p className="mt-0.5 whitespace-pre-wrap break-words text-sm leading-5 text-slate-300">{message.content}</p>
                               </div>
-                            </div>
+                            </article>
                           );
                         })}
 
@@ -291,20 +292,20 @@ function Home() {
 
                   <form
                     onSubmit={handleSendMessage}
-                    className="flex shrink-0 items-center gap-3 border-t border-slate-800 px-4 py-4"
+                    className="flex shrink-0 items-center gap-2 border-t border-white/7 bg-[#0b0f18] px-5 py-3"
                   >
                     <input
                       value={messageText}
                       onChange={(event) => setMessageText(event.target.value)}
                       placeholder="Nhập tin nhắn..."
-                      className="flex-1 rounded-full bg-slate-800 px-5 py-3 text-white outline-none placeholder:text-slate-500"
+                      className="h-9 flex-1 rounded-md border border-white/8 bg-[#121824] px-3 text-sm text-white outline-none placeholder:text-slate-600 focus:border-indigo-500"
                     />
 
                     <button
                       type="submit"
-                      className="flex h-11 w-11 items-center justify-center rounded-full bg-blue-600 hover:bg-blue-700"
+                      className="flex h-9 w-9 items-center justify-center rounded-md bg-indigo-500 hover:bg-indigo-400"
                     >
-                      <Send size={20} />
+                      <Send size={16} />
                     </button>
                   </form>
                 </>
@@ -324,7 +325,9 @@ function Home() {
                 defaultSize="300px"
                 className="hidden bg-slate-900 xl:block"
               >
-                <aside className="h-full border-l border-slate-800 p-6">
+                <aside className="h-full border-l border-white/7">
+                  <ContactInfoPanel user={selectedUser} onCall={handleStartCall} />
+                  <div className="hidden">
                   {selectedUser ? (
                     <>
                       <div className="flex flex-col items-center">
@@ -364,6 +367,7 @@ function Home() {
                       Chưa chọn user
                     </div>
                   )}
+                  </div>
                 </aside>
               </Panel>
             </>

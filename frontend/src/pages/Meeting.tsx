@@ -8,8 +8,10 @@ import { endMeetingApi, getMeetingByCodeApi } from "../api/meeting.api";
 import type { Meeting } from "../types/meeting.type";
 import { useMeetingChat } from "../hooks/useMeetingChat";
 import { useActiveMeeting } from "../contexts/ActiveMeetingContext";
+import { useAppDialog } from "../contexts/AppDialogContext";
 
 function MeetingPage() {
+  const { notify } = useAppDialog();
   const { meetingCode } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -42,9 +44,8 @@ function MeetingPage() {
           roomId: data.roomId,
           title: data.meetingCode,
         });
-      } catch (error) {
-        console.error(error);
-        alert("Không tải được cuộc họp");
+      } catch {
+        await notify("Không tải được cuộc họp");
         navigate("/rooms", { replace: true });
       } finally {
         setLoading(false);
@@ -84,9 +85,8 @@ function MeetingPage() {
     try {
       await endMeetingApi(meeting.id);
       setActiveMeeting(null);
-    } catch (error) {
-      console.error(error);
-      alert("Kết thúc cuộc gọi thất bại");
+    } catch {
+      await notify("Kết thúc cuộc gọi thất bại");
     } finally {
       navigate("/rooms");
     }
@@ -101,13 +101,9 @@ function MeetingPage() {
   }
 
   return (
-    <main className="relative flex h-screen overflow-hidden bg-slate-950 text-white">
-      <section
-        className={`flex min-w-0 flex-1 flex-col px-3 py-3 transition-all duration-300 ${
-          chatOpen ? "pr-[360px]" : ""
-        }`}
-      >
-        <div className="mb-2 flex h-14 items-center justify-between rounded-xl border border-slate-800 bg-slate-900/80 px-4 shadow-lg backdrop-blur">
+    <main className="relative flex h-screen overflow-hidden bg-[#090d15] text-white">
+      <section className="flex min-w-0 flex-1 flex-col">
+        <div className="flex h-[52px] shrink-0 items-center justify-between border-b border-white/7 bg-[#0d111b] px-4">
           <div className="min-w-0">
             <h1 className="truncate text-sm font-bold">
               {meeting?.meetingCode ?? "Meeting"}
@@ -123,7 +119,7 @@ function MeetingPage() {
           </div>
         </div>
 
-        <div className="min-h-0 flex-1">
+        <div className="min-h-0 flex-1 p-3">
           <VideoGrid
             localTitle={user?.name ?? "Tôi"}
             onLeaveRoom={handleLeaveRoom}
@@ -134,9 +130,9 @@ function MeetingPage() {
       {!chatOpen && (
         <button
           onClick={() => setChatOpen(true)}
-          className="fixed bottom-24 right-6 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-slate-800 text-white shadow-2xl transition hover:scale-105 hover:bg-slate-700"
+          className="fixed bottom-4 right-4 z-[60] flex h-9 w-9 items-center justify-center rounded-md border border-white/8 bg-[#0d111b] text-slate-300 shadow-xl transition hover:bg-indigo-500/15 hover:text-indigo-300"
         >
-          <MessageCircle size={21} />
+          <MessageCircle size={17} />
 
           {messages.length > 0 && (
             <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold">
@@ -147,13 +143,13 @@ function MeetingPage() {
       )}
 
       <aside
-        className={`fixed bottom-3 right-3 top-3 z-50 flex w-[332px] flex-col rounded-2xl border border-slate-800 bg-slate-900/95 text-white shadow-2xl backdrop-blur-xl transition-all duration-300 ${
+        className={`flex shrink-0 flex-col overflow-hidden bg-[#0d111b] text-white transition-[width,opacity] duration-300 ${
           chatOpen
-            ? "translate-x-0 opacity-100"
-            : "translate-x-[calc(100%+1rem)] opacity-0"
+            ? "w-[300px] border-l border-white/7 opacity-100"
+            : "w-0 border-l-0 opacity-0"
         }`}
       >
-        <header className="flex h-14 items-center justify-between border-b border-slate-800 px-4">
+        <header className="flex h-[52px] shrink-0 items-center justify-between border-b border-white/7 px-3">
           <div>
             <h2 className="text-sm font-bold">Chat cuộc họp</h2>
             <p className="text-xs text-slate-400">{messages.length} tin nhắn</p>
@@ -161,13 +157,13 @@ function MeetingPage() {
 
           <button
             onClick={() => setChatOpen(false)}
-            className="rounded-full p-2 text-slate-400 transition hover:bg-slate-800 hover:text-white"
+            className="flex h-8 w-8 items-center justify-center rounded-md text-slate-400 transition hover:bg-white/7 hover:text-white"
           >
             <X size={18} />
           </button>
         </header>
 
-        <div className="no-scrollbar min-h-0 flex-1 space-y-3 overflow-y-auto px-3 py-4">
+        <div className="no-scrollbar min-h-0 flex-1 space-y-2.5 overflow-y-auto px-3 py-4">
           {messagesLoading ? (
             <div className="pt-10 text-center text-sm text-slate-500">
               Đang tải tin nhắn...
@@ -186,10 +182,10 @@ function MeetingPage() {
                   className={`flex ${mine ? "justify-end" : "justify-start"}`}
                 >
                   <div
-                    className={`max-w-[88%] rounded-2xl px-3.5 py-2.5 text-sm shadow ${
+                    className={`max-w-[94%] border-l-2 px-3 py-2 text-[13px] ${
                       mine
-                        ? "bg-blue-600 text-white"
-                        : "border border-slate-700 bg-slate-800 text-slate-100"
+                        ? "border-indigo-400 bg-indigo-500/10 text-slate-100"
+                        : "border-slate-600 bg-white/[0.035] text-slate-200"
                     }`}
                   >
                     {!mine && (
@@ -202,7 +198,7 @@ function MeetingPage() {
 
                     <p
                       className={`mt-1.5 text-right text-[10px] ${
-                        mine ? "text-blue-100" : "text-slate-400"
+                        mine ? "text-indigo-300/70" : "text-slate-500"
                       }`}
                     >
                       {new Date(message.createdAt).toLocaleTimeString("vi-VN", {
@@ -219,9 +215,9 @@ function MeetingPage() {
 
         <form
           onSubmit={handleSendMessage}
-          className="border-t border-slate-800 p-3"
+          className="border-t border-white/7 p-3"
         >
-          <div className="flex items-center rounded-xl bg-slate-800 px-2 py-2">
+          <div className="flex h-9 items-center rounded-md border border-white/8 bg-white/5 px-1.5 focus-within:border-indigo-400/60">
             <input
               value={messageText}
               onChange={(event) => setMessageText(event.target.value)}
@@ -231,7 +227,7 @@ function MeetingPage() {
 
             <button
               type="submit"
-              className="ml-2 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-600 transition hover:bg-blue-500"
+              className="ml-2 flex h-7 w-7 shrink-0 items-center justify-center rounded bg-indigo-500 transition hover:bg-indigo-400"
             >
               <Send size={17} />
             </button>

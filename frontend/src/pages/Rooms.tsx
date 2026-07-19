@@ -1,16 +1,30 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Info, Plus, Search, Send, Video } from "lucide-react";
+import {
+  ChevronDown,
+  PanelRightOpen,
+  Plus,
+  Radio,
+  Search,
+  Send,
+  Trash2,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Group, Panel, Separator } from "react-resizable-panels";
-import { getMyRoomsApi, createRoomApi } from "../api/room.api";
+import {
+  createRoomApi,
+  getMyRoomsApi,
+  removeRoomMemberApi,
+} from "../api/room.api";
 import { getChatUsersApi } from "../api/user.api";
 import CreateGroupModal from "../components/CreateGroupModal";
 import type { Room } from "../types/room.type";
 import type { User } from "../types/user.type";
 import { useAuth } from "../hooks/useAuth";
 import { useRoomChat } from "../hooks/useRoomChat";
+import { useAppDialog } from "../contexts/AppDialogContext";
 
 function Rooms() {
+  const { confirmAction, notify } = useAppDialog();
   const navigate = useNavigate();
   const { user: currentUser } = useAuth();
 
@@ -26,6 +40,8 @@ function Rooms() {
   const [messageText, setMessageText] = useState("");
 
   const [showInfo, setShowInfo] = useState(false);
+  const [membersExpanded, setMembersExpanded] = useState(false);
+  const [removingMemberId, setRemovingMemberId] = useState<number | null>(null);
 
   const filteredRooms = useMemo(() => {
     const q = keyword.trim().toLowerCase();
@@ -33,6 +49,20 @@ function Rooms() {
 
     return rooms.filter((room) => room.name.toLowerCase().includes(q));
   }, [keyword, rooms]);
+
+  const selectedMemberUsers = useMemo(() => {
+    if (!selectedRoom) return [];
+
+    const memberIds = new Set(
+      selectedRoom.members?.map((member) => member.userId) ?? [],
+    );
+
+    const availableUsers = currentUser
+      ? [currentUser, ...users.filter((user) => user.id !== currentUser.id)]
+      : users;
+
+    return availableUsers.filter((user) => memberIds.has(user.id));
+  }, [currentUser, selectedRoom, users]);
 
   const loadRooms = async () => {
     try {
@@ -44,9 +74,8 @@ function Rooms() {
       if (data.length > 0) {
         await selectRoom(data[0]);
       }
-    } catch (error) {
-      console.error(error);
-      alert("Không tải được danh sách phòng.");
+    } catch {
+      setRooms([]);
     } finally {
       setLoading(false);
     }
@@ -56,9 +85,8 @@ function Rooms() {
     try {
       const data = await getChatUsersApi();
       setUsers(data);
-    } catch (error) {
-      console.error(error);
-      alert("Không tải được danh sách người dùng.");
+    } catch {
+      setUsers([]);
     }
   };
 
@@ -72,6 +100,10 @@ function Rooms() {
     loadRooms();
     loadUsers();
   }, []);
+
+  useEffect(() => {
+    setMembersExpanded(false);
+  }, [selectedRoom?.id]);
 
   const handleCreateGroup = async (groupName: string, members: User[]) => {
     await createRoomApi({
@@ -91,9 +123,39 @@ function Rooms() {
     try {
       setMessageText("");
       await sendMessage(content);
-    } catch (error) {
-      console.error(error);
-      alert("Gửi tin nhắn nhóm thất bại");
+    } catch {
+      await notify("Gửi tin nhắn nhóm thất bại");
+    }
+  };
+
+  const handleRemoveMember = async (member: User) => {
+    if (!selectedRoom || selectedRoom.createdBy !== currentUser?.id) return;
+
+    const confirmed = await confirmAction({
+      title: "Xoá thành viên",
+      message: `Bạn có chắc muốn xoá ${member.name} khỏi phòng không?`,
+      confirmLabel: "Có, xoá thành viên",
+      tone: "danger",
+    });
+    if (!confirmed) return;
+
+    try {
+      setRemovingMemberId(member.id);
+      const updatedRoom = await removeRoomMemberApi(selectedRoom.id, member.id);
+
+      setRooms((currentRooms) =>
+        currentRooms.map((room) =>
+          room.id === updatedRoom.id ? updatedRoom : room,
+        ),
+      );
+      await selectRoom(updatedRoom);
+    } catch {
+      await notify({
+        message: "Không thể xoá thành viên khỏi phòng",
+        tone: "danger",
+      });
+    } finally {
+      setRemovingMemberId(null);
     }
   };
 
@@ -120,14 +182,14 @@ function Rooms() {
             <aside className="flex h-full flex-col border-r border-slate-800">
               <div className="p-3">
                 <div className="flex items-center justify-between">
-                  <h1 className="text-2xl font-bold">Phòng họp</h1>
+                  <h1 className="text-lg font-bold tracking-tight">Phòng họp</h1>
 
                   <button
                     onClick={() => setGroupModalOpen(true)}
                     className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-800 hover:bg-slate-700"
                     title="Tạo phòng"
                   >
-                    <Plus size={20} />
+                    <Plus size={16} />
                   </button>
                 </div>
 
@@ -159,11 +221,13 @@ function Rooms() {
                       <button
                         key={room.id}
                         onClick={() => selectRoom(room)}
-                        className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors ${
-                          active ? "bg-slate-800" : "hover:bg-slate-800"
+                        className={`flex w-full items-center gap-2.5 border-l-2 px-2.5 py-2 text-left transition-colors ${
+                          active
+                            ? "border-indigo-400 bg-indigo-500/8"
+                            : "border-transparent hover:bg-white/4"
                         }`}
                       >
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-700 text-sm font-bold text-white">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-white/8 bg-[#171d2a] text-xs font-bold text-indigo-300">
                           {getAvatarText(room.name)}
                         </div>
 
@@ -189,17 +253,17 @@ function Rooms() {
             <section className="flex h-full min-w-0 flex-col">
               {selectedRoom ? (
                 <>
-                  <header className="flex h-[58px] shrink-0 items-center justify-between border-b border-slate-800 px-3.5">
+                  <header className="flex h-[58px] shrink-0 items-center justify-between border-b border-white/7 bg-[#0b0f18] px-4">
                     <div className="flex min-w-0 items-center gap-3">
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-700 text-xs font-bold text-white">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-indigo-500/15 text-xs font-bold text-indigo-300">
                         {getAvatarText(selectedRoom.name)}
                       </div>
 
                       <div className="min-w-0">
-                        <h2 className="truncate font-bold text-white">
+                        <h2 className="truncate text-sm font-semibold text-white">
                           {selectedRoom.name}
                         </h2>
-                        <p className="truncate text-sm text-slate-400">
+                        <p className="truncate text-[11px] uppercase tracking-wider text-slate-500">
                           {getMemberCount(selectedRoom)} thành viên
                         </p>
                       </div>
@@ -208,10 +272,10 @@ function Rooms() {
                     <div className="flex gap-3 text-blue-500">
                       <button
                         onClick={() => navigate(`/call/${selectedRoom.id}`)}
-                        className="rounded-full p-2 hover:bg-slate-800"
+                        className="rounded-lg p-2 hover:bg-slate-800"
                         title="Tham gia cuộc gọi"
                       >
-                        <Video size={22} />
+                        <Radio size={17} />
                       </button>
 
                       <button
@@ -219,15 +283,15 @@ function Rooms() {
                         className={`rounded-full p-2 transition ${
                           showInfo
                             ? "bg-blue-600 text-white"
-                            : "hover:bg-slate-800 text-blue-500"
+                            : "text-blue-500 hover:bg-slate-800"
                         }`}
                       >
-                        <Info size={22} />
+                        <PanelRightOpen size={17} />
                       </button>
                     </div>
                   </header>
 
-                  <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto px-4 py-3.5">
+                  <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto bg-[#090d15] px-5 py-4">
                     {messagesLoading ? (
                       <div className="flex h-full items-center justify-center text-slate-500">
                         Đang tải tin nhắn...
@@ -237,40 +301,51 @@ function Rooms() {
                         Chưa có tin nhắn nhóm. Hãy gửi tin nhắn đầu tiên.
                       </div>
                     ) : (
-                      <div className="space-y-3">
+                      <div className="mx-auto max-w-4xl space-y-1">
                         {messages.map((message) => {
                           const mine = message.senderId === currentUser?.id;
 
                           return (
-                            <div
+                            <article
                               key={message.id}
-                              className={`flex ${
-                                mine ? "justify-end" : "justify-start"
+                              className={`group grid grid-cols-[32px_1fr] gap-3 border-l-2 px-3 py-2.5 transition-colors ${
+                                mine
+                                  ? "border-indigo-500/60 bg-indigo-500/5"
+                                  : "border-transparent hover:bg-white/[0.025]"
                               }`}
                             >
-                              <div
-                                className={`max-w-[70%] rounded-xl px-3 py-2 text-sm ${
+                              <div className={`flex h-8 w-8 items-center justify-center rounded-md text-[11px] font-bold ${mine ? "bg-indigo-500 text-white" : "bg-slate-800 text-slate-300"}`}>
+                                {getAvatarText(
                                   mine
-                                    ? "bg-blue-600 text-white"
-                                    : "bg-slate-800 text-slate-100"
-                                }`}
-                              >
-                                <p>{message.content}</p>
-
-                                <p
-                                  className={`mt-1 text-[11px] ${
-                                    mine ? "text-blue-100" : "text-slate-400"
-                                  }`}
-                                >
-                                  {new Date(
-                                    message.createdAt,
-                                  ).toLocaleTimeString("vi-VN", {
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                  })}
+                                    ? currentUser?.name
+                                    : users.find(
+                                        (user) => user.id === message.senderId,
+                                      )?.name,
+                                )}
+                              </div>
+                              <div className="min-w-0">
+                                <div className="flex items-baseline gap-2">
+                                  <span className="text-xs font-semibold text-slate-200">
+                                    {mine
+                                      ? "Bạn"
+                                      : users.find(
+                                          (user) => user.id === message.senderId,
+                                        )?.name ?? "Thành viên"}
+                                  </span>
+                                  <time className="text-[10px] text-slate-600">
+                                    {new Date(
+                                      message.createdAt,
+                                    ).toLocaleTimeString("vi-VN", {
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    })}
+                                  </time>
+                                </div>
+                                <p className="mt-0.5 whitespace-pre-wrap break-words text-sm leading-5 text-slate-300">
+                                  {message.content}
                                 </p>
                               </div>
-                            </div>
+                            </article>
                           );
                         })}
 
@@ -281,20 +356,20 @@ function Rooms() {
 
                   <form
                     onSubmit={handleSendMessage}
-                    className="flex shrink-0 items-center gap-3 border-t border-slate-800 px-4 py-4"
+                    className="flex shrink-0 items-center gap-2 border-t border-white/7 bg-[#0b0f18] px-5 py-3"
                   >
                     <input
                       value={messageText}
                       onChange={(event) => setMessageText(event.target.value)}
                       placeholder={`Nhắn tin vào ${selectedRoom.name}...`}
-                      className="flex-1 rounded-full bg-slate-800 px-5 py-3 text-white outline-none placeholder:text-slate-500"
+                      className="h-9 flex-1 rounded-md border border-white/8 bg-[#121824] px-3 text-sm text-white outline-none placeholder:text-slate-600 focus:border-indigo-500"
                     />
 
                     <button
                       type="submit"
-                      className="flex h-11 w-11 items-center justify-center rounded-full bg-blue-600 hover:bg-blue-700"
+                      className="flex h-9 w-9 items-center justify-center rounded-md bg-indigo-500 text-white hover:bg-indigo-400"
                     >
-                      <Send size={20} />
+                      <Send size={16} />
                     </button>
                   </form>
                 </>
@@ -308,14 +383,14 @@ function Rooms() {
 
           {showInfo && (
             <>
-              <Separator className="w-[3px] cursor-col-resize bg-slate-900 transition-colors hover:bg-blue-600" />
+              <Separator className="w-px cursor-col-resize bg-white/7 transition-colors hover:bg-indigo-400" />
 
-              <Panel defaultSize="300px" className="bg-slate-900">
-                <aside className="h-full border-l border-slate-800 p-6">
+              <Panel defaultSize="270px" className="bg-[#0d111b]">
+                <aside className="h-full border-l border-white/7 p-4">
                   {selectedRoom ? (
                     <>
                       <div className="flex flex-col items-center">
-                        <div className="flex h-24 w-24 items-center justify-center rounded-full bg-slate-700 text-3xl font-bold text-white">
+                        <div className="flex h-14 w-14 items-center justify-center rounded-lg bg-indigo-500/12 text-lg font-bold text-indigo-200 ring-1 ring-indigo-400/20">
                           {getAvatarText(selectedRoom.name)}
                         </div>
 
@@ -328,13 +403,75 @@ function Rooms() {
                         </p>
                       </div>
 
-                      <div className="mt-8 space-y-4 font-semibold text-slate-200">
-                        <button className="flex w-full justify-between hover:text-white">
+                      <div className="mt-5 space-y-1 text-xs font-medium text-slate-300">
+                        <button
+                          onClick={() => setMembersExpanded((value) => !value)}
+                          className="flex w-full items-center justify-between rounded-md border border-white/6 bg-white/[0.025] px-3 py-2.5 hover:bg-white/5 hover:text-white"
+                        >
                           Thành viên
-                          <span>{getMemberCount(selectedRoom)}</span>
+                          <span className="flex items-center gap-2">
+                            {getMemberCount(selectedRoom)}
+                            <ChevronDown
+                              size={14}
+                              className={`transition-transform ${
+                                membersExpanded ? "rotate-180" : ""
+                              }`}
+                            />
+                          </span>
                         </button>
 
-                        <button className="flex w-full justify-between hover:text-white">
+                        {membersExpanded && (
+                          <div className="space-y-1 rounded-md border border-white/6 bg-black/10 p-1.5">
+                            {selectedMemberUsers.map((member) => {
+                              const roomMember = selectedRoom.members.find(
+                                (item) => item.userId === member.id,
+                              );
+
+                              return (
+                                <div
+                                  key={member.id}
+                                  className="flex items-center gap-2.5 rounded-md px-2 py-2 hover:bg-white/5"
+                                >
+                                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-indigo-500/15 text-[11px] font-bold text-indigo-200">
+                                    {getAvatarText(member.name)}
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <p className="truncate text-xs font-semibold text-slate-200">
+                                      {member.name}
+                                      {member.id === currentUser?.id && (
+                                        <span className="ml-1 font-normal text-slate-500">
+                                          (Bạn)
+                                        </span>
+                                      )}
+                                    </p>
+                                    <p className="truncate text-[10px] font-normal text-slate-500">
+                                      {member.email}
+                                    </p>
+                                  </div>
+                                  {selectedRoom.createdBy === currentUser?.id &&
+                                    member.id !== selectedRoom.createdBy && (
+                                      <button
+                                        type="button"
+                                        onClick={() => handleRemoveMember(member)}
+                                        disabled={removingMemberId === member.id}
+                                        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-slate-500 transition hover:bg-red-500/15 hover:text-red-300 disabled:cursor-wait disabled:opacity-50"
+                                        title="Xoá thành viên khỏi phòng"
+                                      >
+                                        <Trash2 size={13} />
+                                      </button>
+                                    )}
+                                  {roomMember?.role === "owner" && (
+                                    <span className="rounded bg-amber-400/10 px-1.5 py-0.5 text-[9px] uppercase text-amber-300">
+                                      Chủ phòng
+                                    </span>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+
+                        <button className="flex w-full justify-between rounded-md border border-white/6 bg-white/[0.025] px-3 py-2.5 hover:bg-white/5 hover:text-white">
                           Ngày tạo
                           <span>
                             {new Date(
@@ -343,7 +480,7 @@ function Rooms() {
                           </span>
                         </button>
 
-                        <button className="flex w-full justify-between hover:text-white">
+                        <button className="flex w-full justify-between rounded-md border border-white/6 bg-white/[0.025] px-3 py-2.5 hover:bg-white/5 hover:text-white">
                           Quyền riêng tư và hỗ trợ
                           <span>⌄</span>
                         </button>

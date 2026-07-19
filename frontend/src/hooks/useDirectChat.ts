@@ -46,9 +46,8 @@ export function useDirectChat() {
 
       const data = await getMessagesApi(conv.id);
       setMessages(data);
-    } catch (error) {
-      console.error(error);
-      alert("Không mở được cuộc trò chuyện");
+    } catch {
+      setMessages([]);
     } finally {
       setMessagesLoading(false);
     }

@@ -43,8 +43,12 @@ function AppLayout() {
               collapsed ? "h-0 opacity-0" : "h-11 opacity-100"
             }`}
           >
-            <h1 className="truncate text-sm font-bold tracking-wide">VIDA</h1>
-            <p className="mt-0.5 truncate text-xs text-slate-500">{user?.name}</p>
+            <h1 className="truncate text-sm font-bold tracking-wide">
+              {user?.name ?? "Người dùng"}
+            </h1>
+            <p className="mt-0.5 truncate text-[10px] text-slate-500">
+              {user?.email ?? ""}
+            </p>
           </div>
 
           <nav className="mt-5 flex flex-col gap-1.5">

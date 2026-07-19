@@ -11,8 +11,10 @@ import type { User } from "../types/user.type";
 import type { Room } from "../types/room.type";
 import { ArrowLeft, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAppDialog } from "../contexts/AppDialogContext";
 
 function AdminGroups() {
+  const { confirmAction, notify } = useAppDialog();
   const [users, setUsers] = useState<User[]>([]);
   const [groupModalOpen, setGroupModalOpen] = useState(false);
   const [rooms, setRooms] = useState<Room[]>([]);
@@ -26,8 +28,7 @@ function AdminGroups() {
     try {
       const data = await getChatUsersApi();
       setUsers(data);
-    } catch (error) {
-      console.error(error);
+    } catch {
     }
   };
 
@@ -36,8 +37,7 @@ function AdminGroups() {
       setLoading(true);
       const data = await getMyRoomsApi();
       setRooms(data);
-    } catch (error) {
-      console.error(error);
+    } catch {
     } finally {
       setLoading(false);
     }
@@ -71,7 +71,7 @@ function AdminGroups() {
     if (!editingRoom) return;
 
     if (!editName.trim()) {
-      alert("Tên nhóm không được để trống");
+      await notify("Tên nhóm không được để trống");
       return;
     }
 
@@ -82,25 +82,26 @@ function AdminGroups() {
 
       closeEdit();
       await loadRooms();
-    } catch (error) {
-      console.error(error);
-      alert("Sửa nhóm thất bại");
+    } catch {
+      await notify("Sửa nhóm thất bại");
     }
   };
 
   const handleDelete = async (room: Room) => {
-    const confirmed = confirm(
-      `Bạn có chắc muốn xoá nhóm "${room.name}" không?`,
-    );
+    const confirmed = await confirmAction({
+      title: "Xoá nhóm",
+      message: `Bạn có chắc muốn xoá nhóm “${room.name}” không?`,
+      confirmLabel: "Có, xoá nhóm",
+      tone: "danger",
+    });
 
     if (!confirmed) return;
 
     try {
       await deleteRoomApi(room.id);
       await loadRooms();
-    } catch (error) {
-      console.error(error);
-      alert("Xoá nhóm thất bại");
+    } catch {
+      await notify({ message: "Xoá nhóm thất bại", tone: "danger" });
     }
   };
 
@@ -112,16 +113,16 @@ function AdminGroups() {
         onClose={() => setGroupModalOpen(false)}
         onCreate={handleCreateGroup}
       />
-      <main className="min-h-full bg-slate-950 px-8 py-8 text-white">
-        <div className="mx-auto max-w-6xl">
+      <main className="min-h-full bg-[#090d15] px-5 py-5 text-white">
+        <div className="mx-auto max-w-5xl">
           <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
               <button
                 onClick={() => navigate(-1)}
-                className="flex h-11 w-11 items-center justify-center rounded-full bg-slate-800 text-slate-300 transition hover:bg-slate-700 hover:text-white"
+                className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/7 bg-white/5 text-slate-300 transition hover:bg-white/10 hover:text-white"
                 title="Quay lại"
               >
-                <ArrowLeft size={22} />
+                <ArrowLeft size={17} />
               </button>
 
               <div>
@@ -132,16 +133,16 @@ function AdminGroups() {
 
             <button
               onClick={() => setGroupModalOpen(true)}
-              className="flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white hover:bg-blue-700"
+              className="flex h-9 items-center gap-2 rounded-lg bg-indigo-500 px-4 text-xs font-semibold text-white transition hover:bg-indigo-400"
             >
               <Plus size={18} />
               Thêm nhóm
             </button>
           </div>
 
-          <div className="mt-8 overflow-hidden rounded-2xl border border-slate-800 bg-slate-900">
+          <div className="mt-5 overflow-hidden rounded-xl border border-white/7 bg-[#0d111b]">
             <table className="w-full text-left">
-              <thead className="bg-slate-800 text-sm text-slate-300">
+              <thead className="bg-white/4 text-[11px] uppercase tracking-wide text-slate-400">
                 <tr>
                   <th className="px-5 py-4">ID</th>
                   <th className="px-5 py-4">Tên nhóm</th>
@@ -175,7 +176,7 @@ function AdminGroups() {
                   rooms.map((room) => (
                     <tr
                       key={room.id}
-                      className="border-t border-slate-800 text-slate-300"
+                      className="border-t border-white/6 text-slate-300 transition hover:bg-white/[0.025]"
                     >
                       <td className="px-5 py-4">{room.id}</td>
 
@@ -195,14 +196,14 @@ function AdminGroups() {
                         <div className="flex justify-end gap-2">
                           <button
                             onClick={() => openEdit(room)}
-                            className="rounded-lg bg-slate-700 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-600"
+                            className="rounded-md bg-white/7 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/12"
                           >
                             Sửa
                           </button>
 
                           <button
                             onClick={() => handleDelete(room)}
-                            className="rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700"
+                            className="rounded-md bg-red-500/15 px-3 py-1.5 text-xs font-semibold text-red-300 hover:bg-red-500/25"
                           >
                             Xoá
                           </button>
@@ -217,30 +218,30 @@ function AdminGroups() {
         </div>
 
         {editingRoom && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-6">
-            <div className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-2xl">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm">
+            <div className="w-full max-w-sm rounded-xl border border-white/8 bg-[#0d111b] p-5 shadow-2xl">
               <h2 className="text-2xl font-bold text-white">Sửa nhóm</h2>
 
-              <div className="mt-6">
+              <div className="mt-5">
                 <label className="text-sm text-slate-300">Tên nhóm</label>
                 <input
                   value={editName}
                   onChange={(event) => setEditName(event.target.value)}
-                  className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-white outline-none focus:border-blue-500"
+                  className="mt-2 h-9 w-full rounded-md border border-white/8 bg-white/5 px-3 text-sm text-white outline-none focus:border-indigo-400"
                 />
               </div>
 
-              <div className="mt-8 flex justify-end gap-3">
+              <div className="mt-5 flex justify-end gap-2">
                 <button
                   onClick={closeEdit}
-                  className="rounded-xl bg-slate-700 px-5 py-3 font-semibold text-white hover:bg-slate-600"
+                  className="h-9 rounded-md bg-white/7 px-4 text-xs font-semibold text-white hover:bg-white/12"
                 >
                   Huỷ
                 </button>
 
                 <button
                   onClick={handleUpdate}
-                  className="rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white hover:bg-blue-700"
+                  className="h-9 rounded-md bg-indigo-500 px-4 text-xs font-semibold text-white hover:bg-indigo-400"
                 >
                   Lưu
                 </button>

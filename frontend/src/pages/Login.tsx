@@ -14,8 +14,7 @@ function Login() {
 
     try {
       await login({ email, password });
-    } catch (error) {
-      console.error(error);
+    } catch {
       setError("Email hoặc mật khẩu không đúng");
     }
   };

@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
+import { useAppDialog } from "../contexts/AppDialogContext";
 
 export function useCamera() {
+  const { notify } = useAppDialog();
   const videoRef1 = useRef<HTMLVideoElement | null>(null);
   const videoRef2 = useRef<HTMLVideoElement | null>(null);
 
@@ -25,9 +27,8 @@ export function useCamera() {
       }
 
       setCameraOn(true);
-    } catch (error) {
-      console.error(error);
-      alert("Không mở được camera hoặc micro");
+    } catch {
+      await notify("Không mở được camera hoặc micro");
     }
   };
 

@@ -1,6 +1,8 @@
 import { useRef, useState } from "react";
+import { useAppDialog } from "../contexts/AppDialogContext";
 
 export function useMeetingMedia() {
+  const { notify } = useAppDialog();
   const localVideoRef = useRef<HTMLVideoElement | null>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
 
@@ -14,7 +16,7 @@ export function useMeetingMedia() {
     }
 
     if (!navigator.mediaDevices?.getUserMedia) {
-      alert(
+      await notify(
         "Trình duyệt không hỗ trợ camera/micro hoặc đang không chạy trên HTTPS/localhost.",
       );
       throw new Error("getUserMedia is not supported");
@@ -24,7 +26,7 @@ export function useMeetingMedia() {
     const hasCamera = devices.some((device) => device.kind === "videoinput");
 
     if (!hasCamera) {
-      alert("Không tìm thấy camera trên thiết bị này.");
+      await notify("Không tìm thấy camera trên thiết bị này.");
       throw new Error("No camera device found");
     }
 
@@ -35,7 +37,7 @@ export function useMeetingMedia() {
 
     if (stream.getVideoTracks().length === 0) {
       stream.getTracks().forEach((track) => track.stop());
-      alert("Bạn đã cấp quyền nhưng hệ thống không nhận được camera.");
+      await notify("Bạn đã cấp quyền nhưng hệ thống không nhận được camera.");
       throw new Error("Permission granted but no video track found");
     }
 

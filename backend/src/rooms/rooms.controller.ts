@@ -95,11 +95,16 @@ export class RoomsController {
   }
 
   @Delete(':roomId/members/:userId')
-  @UseGuards(AdminGuard)
   removeMember(
     @Param('roomId', ParseIntPipe) roomId: number,
     @Param('userId', ParseIntPipe) userId: number,
+    @Req() req: AuthRequest,
   ) {
-    return this.roomsService.removeMember(roomId, userId);
+    return this.roomsService.removeMember(
+      roomId,
+      userId,
+      req.user.id,
+      req.user.role === 'admin',
+    );
   }
 }

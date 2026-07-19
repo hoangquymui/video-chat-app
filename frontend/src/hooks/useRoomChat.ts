@@ -37,9 +37,8 @@ export function useRoomChat() {
 
       const data = await getRoomMessagesApi(room.id);
       setMessages(data);
-    } catch (error) {
-      console.error(error);
-      alert("Không mở được chat nhóm");
+    } catch {
+      setMessages([]);
     } finally {
       setMessagesLoading(false);
     }

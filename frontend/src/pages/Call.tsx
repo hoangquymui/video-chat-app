@@ -4,8 +4,10 @@ import Header from "../components/Header";
 import { useAuth } from "../hooks/useAuth";
 import { createMeetingApi } from "../api/meeting.api";
 import { useWebRTCContext } from "../contexts/WebRTCContext";
+import { useAppDialog } from "../contexts/AppDialogContext";
 
 function Call() {
+  const { notify } = useAppDialog();
   const { roomId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -29,20 +31,19 @@ function Call() {
       });
 
       navigate(`/meeting/${meeting.meetingCode}`);
-    } catch (error) {
-      console.error(error);
-      alert("Không tạo được cuộc họp");
+    } catch {
+      await notify("Không tạo được cuộc họp");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <main className="min-h-screen bg-slate-950 px-6 py-8 pb-32 text-white">
+    <main className="min-h-screen bg-[#090d15] px-4 py-4 text-white">
       <Header />
 
-      <section className="mx-auto flex max-w-2xl flex-col items-center justify-center rounded-2xl bg-slate-900 px-8 py-16 text-center">
-        <div className="flex h-28 w-28 items-center justify-center rounded-full bg-slate-700 text-4xl font-bold">
+      <section className="mx-auto mt-8 flex max-w-lg flex-col items-center justify-center rounded-xl border border-white/7 bg-[#0d111b] px-6 py-10 text-center">
+        <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-indigo-500/15 text-xl font-bold text-indigo-300">
           {user?.name?.charAt(0).toUpperCase() ?? "?"}
         </div>
 
@@ -55,7 +56,7 @@ function Call() {
         <button
           onClick={handleJoin}
           disabled={loading}
-          className="mt-8 rounded-full bg-green-600 px-8 py-3 font-semibold text-white hover:bg-green-700 disabled:opacity-60"
+          className="mt-6 h-9 rounded-lg bg-indigo-500 px-6 text-sm font-semibold text-white hover:bg-indigo-400 disabled:opacity-60"
         >
           {loading ? "Đang vào..." : "Tham gia"}
         </button>
